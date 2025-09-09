@@ -7,6 +7,7 @@ import { createStore } from '@/store/store';
 import type { NavKey } from '@/ui/AppShell';
 import type { State } from '@/store/types';
 import AssignmentForm from '@/ui/AssignmentForm';
+import { useAppStore } from '@/store/app';
 import { Button } from '@mantine/core';
 import dayjs from 'dayjs';
 
@@ -17,6 +18,7 @@ export default function App() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitKey, setSubmitKey] = useState(0);
+  const classesFromStore = useAppStore((s) => s.classes);
 
   useEffect(() => store.subscribe(setState), [store]);
 
@@ -130,8 +132,7 @@ export default function App() {
           setFormOpen(false);
           setEditingId(null);
         }}
-        actions={store.actions}
-        classes={state.classes}
+        classes={classesFromStore}
         editing={editingId ? state.assignments.find((x) => x.id === editingId) ?? undefined : undefined}
         onSubmitted={() => {
           setFormOpen(false);

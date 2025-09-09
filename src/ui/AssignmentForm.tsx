@@ -16,6 +16,7 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Assignment, Class, ID, StoreActions } from '@/store/types';
+import { useAppStore } from '@/store/app';
 
 export type AssignmentFormValues = {
   title: string;
@@ -34,8 +35,8 @@ export type AssignmentFormValues = {
 export type AssignmentFormProps = {
   opened: boolean;
   onClose: () => void;
-  actions: StoreActions;
-  classes: Class[];
+  actions?: StoreActions;
+  classes?: Class[];
   editing?: Assignment;
   onSubmitted?: (id: ID) => void;
   onToast?: (message: string) => void; // optional toast hook
@@ -77,6 +78,10 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
   const isDesktop = useMediaQuery('(min-width: 64em)'); // ~1024px
   const [values, setValues] = useState<AssignmentFormValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const addClassStore = useAppStore((s) => s.addClass);
+  const addAssignmentStore = useAppStore((s) => s.addAssignment);
+  const updateAssignmentStore = useAppStore((s) => s.updateAssignment);
+  const classesFromStore = useAppStore((s) => s.classes);
 
   useEffect(() => {
     if (opened) {
@@ -102,10 +107,10 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
     }
   }, [opened, editing]);
 
-  const classOptions = useMemo(
-    () => classes.map((c) => ({ value: c.id, label: `${c.emoji} ${c.name}` })),
-    [classes]
-  );
+  const classOptions = useMemo(() => {
+    const list = classes ?? classesFromStore;
+    return list.map((c) => ({ value: c.id, label: `${c.emoji} ${c.name}` }));
+  }, [classes, classesFromStore]);
 
   const validate = (): boolean => {
     const e: Record<string, string | null> = {};
@@ -130,17 +135,17 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
     return Object.values(e).every((v) => !v);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
     const iso = dateTimeToIso(values.date, values.time)!;
     let classId: ID = values.classId as ID;
     if (values.classMode === 'new') {
-      const created = actions.addClass({
+      const created = await (actions?.addClass ?? addClassStore)({
         name: values.newClassName.trim(),
         emoji: values.newClassEmoji.trim(),
         color: values.newClassColor.startsWith('#') ? values.newClassColor : `#${values.newClassColor}`,
       });
-      classId = created.id;
+      classId = (created as any).id as ID;
     }
     const payload = {
       title: values.title.trim(),
@@ -150,11 +155,11 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
       remindAtMinutes: values.remindEnabled ? Number(values.remindAtMinutes) : null,
     };
     if (editing) {
-      actions.updateAssignment({ id: editing.id, ...payload });
+      await (actions?.updateAssignment ?? updateAssignmentStore)({ id: editing.id, ...payload } as any);
       onSubmitted?.(editing.id);
     } else {
-      const a = actions.addAssignment(payload as any);
-      onSubmitted?.(a.id);
+      const a = await (actions?.addAssignment ?? addAssignmentStore)(payload as any);
+      onSubmitted?.((a as any).id);
     }
     onToast?.('Saved');
     onClose();
