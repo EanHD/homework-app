@@ -11,8 +11,9 @@ A lightweight PWA to track classes and assignments with a Today/Upcoming view, p
 - Preview build: `npm run preview`
 
 ## PWA & Notifications
-- Service worker registers automatically in production builds (`/sw.js`).
-- Manifest at `public/manifest.webmanifest`; icons in `public/`.
+- Service worker registers automatically (`/homework-app/sw.js`) with scope `/homework-app/`.
+- Manifest at `public/manifest.webmanifest` with `start_url: /homework-app/#/main` and `scope: /homework-app/` so installs launch correctly on GitHub Pages.
+- Icons expected under `public/icons/` (see manifest). Add 192/512 PNGs and a 512 maskable PNG.
 - Use the in‑app Notifications toggle to request permission. Reminders trigger near due time while the app is open, and via the SW when supported.
 
 ## Project Structure
