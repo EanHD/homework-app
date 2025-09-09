@@ -11,3 +11,28 @@
 .skip-link:focus {
   left: 12px;
 }
+
+/* Visible focus outlines for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+/* Smooth UI transitions (kept subtle) */
+.mantine-Button-root,
+.mantine-ActionIcon-root,
+.mantine-NavLink-root,
+.mantine-Card-root,
+.mantine-Badge-root {
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

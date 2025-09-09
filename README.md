@@ -45,3 +45,26 @@ This repo follows Speckit (spec → plan → tasks → implementation):
 - Time calculations use UTC day boundaries in selectors to keep tests deterministic.
 - Local persistence uses IndexedDB via `localforage` with a small schema guard.
 - Notifications require user permission and may vary by browser/platform.
+
+## UI System & Theme
+- Theme tokens (`src/ui/theme.ts`):
+  - Primary blue `#1E88E5`, slate gray palette, default radius 12, soft shadows (`sm`/`md`), compact spacing scale.
+  - Mantine Provider is applied in `src/main.tsx` with global styles and CSS reset.
+- AppShell (`src/ui/AppShell.tsx`):
+  - Left navbar (Today, Upcoming, Classes) with Tabler icons; top header with page title, date chip, and desktop Add button.
+  - Responsive: persistent sidebar ≥1024px; collapses into a Drawer with burger toggle on smaller screens.
+  - Semantic landmarks: `header`, `nav`, `main` and `aria-current` on active nav.
+- Core components:
+  - ProgressHeader (`src/ui/ProgressHeader.tsx`): greeting + RingProgress for today’s completion.
+  - StreakChip (`src/ui/StreakChip.tsx`): flame badge with tooltip explaining streak.
+  - AssignmentCard (`src/ui/AssignmentCard.tsx`): checkbox, title, class pill, due time, 3‑dot menu (Edit/Snooze/Delete); overdue and completed visual states.
+  - DateGroup (`src/ui/DateGroup.tsx`): sticky section headers like “Wed, Sep 10”.
+  - EmptyState (`src/ui/EmptyState.tsx`): illustration + microcopy + CTA.
+  - QuickFilters (`src/ui/QuickFilters.tsx`): All / Overdue / Due today / Done.
+- Forms & flows:
+  - AssignmentForm (`src/ui/AssignmentForm.tsx`): Modal (desktop) / Drawer (mobile), ≤5 inputs, validation, uses existing store actions.
+  - Keyboard shortcuts: `/` opens form, `Esc` closes, `Enter` submits when valid; mobile FAB opens form.
+- Accessibility & motion:
+  - Visible focus outlines, AA contrast, `prefers-reduced-motion` respected (see `src/a11y.css`).
+- Pages & integration:
+  - Today/Upcoming/Classes pages in `src/pages/*` render redesigned UI while reusing existing data layer and selectors.
