@@ -29,7 +29,7 @@
 - [x] T005 Upcoming page (`src/pages/Upcoming.tsx`): group by date (dayjs); include Done items (muted + strikethrough + check); add filter pills: All | Overdue | Due soon (<=7d) | Done; do NOT remove items on toggleDone — only style/move when filtered by Done.
 
 ## Phase 3.3: M4 — Classes CRUD
-- [ ] T006 Classes page (`src/pages/Classes.tsx`): header “Add class” button (shortcut: `c`); modal for name (required), emoji (picker/free text), color (swatch); card shows count of open tasks; overflow menu → Edit, Delete (warn: also deletes its assignments).
+- [x] T006 Classes page (`src/pages/Classes.tsx`): header “Add class” button (shortcut: `c`); modal for name (required), emoji (picker/free text), color (swatch); card shows count of open tasks; overflow menu → Edit, Delete (warn: also deletes its assignments).
 
 ## Phase 3.4: M2/M3 — UI Components & Behavior
 - [ ] T007 ProgressHeader (`src/ui/ProgressHeader.tsx`): keep centered label for 1–3 digits using `Center` and tabular/lining numerals; hide label when `totalToday=0`; greeting “Good morning/afternoon/evening” by local time; optional name from local settings, fallback “there”.

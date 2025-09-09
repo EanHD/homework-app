@@ -1,0 +1,51 @@
+import { useEffect, useState } from 'react';
+import { Modal, Stack, TextInput, ColorInput, Group, Button } from '@mantine/core';
+import type { Class } from '@/store/types';
+
+export type ClassFormProps = {
+  opened: boolean;
+  onClose: () => void;
+  initial?: Class;
+  onSubmit: (values: { name: string; emoji: string; color: string }) => void | Promise<void>;
+};
+
+export default function ClassForm({ opened, onClose, initial, onSubmit }: ClassFormProps) {
+  const [name, setName] = useState('');
+  const [emoji, setEmoji] = useState('📚');
+  const [color, setColor] = useState('#1E88E5');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (opened) {
+      setName(initial?.name ?? '');
+      setEmoji(initial?.emoji ?? '📚');
+      setColor(initial?.color ?? '#1E88E5');
+      setError(null);
+    }
+  }, [opened, initial]);
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
+    await onSubmit({ name: name.trim(), emoji: emoji.trim(), color });
+  };
+
+  return (
+    <Modal opened={opened} onClose={onClose} title={initial ? 'Edit class' : 'Add class'} withinPortal>
+      <Stack>
+        <Group align="flex-end" grow>
+          <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} error={error} required />
+          <TextInput label="Emoji" value={emoji} onChange={(e) => setEmoji(e.currentTarget.value)} maxLength={2} />
+        </Group>
+        <ColorInput label="Color" value={color} onChange={setColor} format="hex" />
+        <Group justify="space-between">
+          <Button variant="default" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit}>{initial ? 'Save changes' : 'Add class'}</Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
+
