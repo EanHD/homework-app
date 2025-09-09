@@ -26,7 +26,7 @@
 
 ## Phase 3.2: M2 — Today & Header
 - [x] T004 Today page (`src/pages/Today.tsx`): use store selectors to compute `totalToday` and `completedToday`; render `<ProgressHeader totalToday={X} completedToday={Y} />`; page re-renders when `lastChangeToken` changes; empty state CTA opens Assignment form; persist QuickFilters (All/Overdue/Today/Done) in URL hash.
-- [ ] T005 Upcoming page (`src/pages/Upcoming.tsx`): group by date (dayjs); include Done items (muted + strikethrough + check); add filter pills: All | Overdue | Due soon (<=7d) | Done; do NOT remove items on toggleDone — only style/move when filtered by Done.
+- [x] T005 Upcoming page (`src/pages/Upcoming.tsx`): group by date (dayjs); include Done items (muted + strikethrough + check); add filter pills: All | Overdue | Due soon (<=7d) | Done; do NOT remove items on toggleDone — only style/move when filtered by Done.
 
 ## Phase 3.3: M4 — Classes CRUD
 - [ ] T006 Classes page (`src/pages/Classes.tsx`): header “Add class” button (shortcut: `c`); modal for name (required), emoji (picker/free text), color (swatch); card shows count of open tasks; overflow menu → Edit, Delete (warn: also deletes its assignments).

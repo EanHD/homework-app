@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
-import type { State, StoreActions } from '@/store/types';
-import { selectors } from '@/store/selectors';
+import { useMemo, useState } from 'react';
+import type { StoreActions, State } from '@/store/types';
 import AssignmentCard from '@/ui/AssignmentCard';
 import DateGroup from '@/ui/DateGroup';
-import { Stack } from '@mantine/core';
+import { Group, SegmentedControl, Stack } from '@mantine/core';
+import { useAppStore, groupByDate } from '@/store/app';
 import dayjs from 'dayjs';
 
 export type UpcomingPageProps = {
@@ -15,25 +15,30 @@ export type UpcomingPageProps = {
 };
 
 export default function UpcomingPage({ state, actions, onEdit, onDelete, onSnooze1h }: UpcomingPageProps) {
-  const classMap = selectors.getClassMap(state);
-  const ids = selectors.getIncompleteAssignmentIds(state);
-  const items = selectors.byDueDateAscending(
-    ids.map((id) => state.assignments.find((a) => a.id === id)!).filter(Boolean)
-  );
+  const [filter, setFilter] = useState<'all' | 'overdue' | 'due-soon' | 'done'>('all');
+  const selectUpcoming = useAppStore((s) => s.selectUpcoming);
+  const classesFromStore = useAppStore((s) => s.classes);
+  const appToggleDone = useAppStore((s) => s.toggleDone);
+  const appUpdateAssignment = useAppStore((s) => s.updateAssignment);
+  const appDeleteAssignment = useAppStore((s) => s.deleteAssignment);
 
-  const groups = useMemo(() => {
-    const map = new Map<string, typeof items>();
-    for (const a of items) {
-      const key = dayjs(a.dueAt).format('ddd, MMM D');
-      const arr = map.get(key) ?? [];
-      arr.push(a);
-      map.set(key, arr);
-    }
-    return Array.from(map.entries());
-  }, [items]);
+  const items = selectUpcoming(new Date(), { filter });
+  const groups = useMemo(() => groupByDate(items), [items]);
 
   return (
     <Stack>
+      <Group justify="flex-end">
+        <SegmentedControl
+          value={filter}
+          onChange={(v) => setFilter(v as any)}
+          data={[
+            { label: 'All', value: 'all' },
+            { label: 'Overdue', value: 'overdue' },
+            { label: 'Due soon', value: 'due-soon' },
+            { label: 'Done', value: 'done' },
+          ]}
+        />
+      </Group>
       {groups.map(([label, list]) => (
         <Stack key={label} gap="xs">
           <DateGroup label={label} />
@@ -44,12 +49,25 @@ export default function UpcomingPage({ state, actions, onEdit, onDelete, onSnooz
               title={a.title}
               dueAt={a.dueAt}
               completed={a.completed}
-              classLabel={classMap[a.classId]?.name ?? '—'}
-              classColor={classMap[a.classId]?.color ?? 'gray'}
-              onToggleComplete={(id, next) => actions.toggleComplete(id, next)}
+              classLabel={(classesFromStore.find((c) => c.id === a.classId)?.name) ?? '—'}
+              classColor={(classesFromStore.find((c) => c.id === a.classId)?.color) ?? 'gray'}
+              onToggleComplete={async (id) => {
+                if (actions?.toggleComplete) actions.toggleComplete(id, !a.completed);
+                else await appToggleDone(id);
+              }}
               onEdit={onEdit}
-              onDelete={onDelete}
-              onSnooze1h={onSnooze1h}
+              onDelete={async (id) => {
+                if (onDelete) return onDelete(id);
+                if (confirm('Delete this assignment?')) {
+                  if (actions?.removeAssignment) actions.removeAssignment(id);
+                  else await appDeleteAssignment(id);
+                }
+              }}
+              onSnooze1h={async (id) => {
+                const next = dayjs(a.dueAt).add(1, 'hour').toISOString();
+                if (actions?.updateAssignment) actions.updateAssignment({ id, dueAt: next });
+                else await appUpdateAssignment({ id, dueAt: next } as any);
+              }}
             />
           ))}
         </Stack>
