@@ -16,12 +16,13 @@ export type UpcomingPageProps = {
 export default function UpcomingPage({ onEdit, onDelete, onSnooze1h }: UpcomingPageProps) {
   const [filter, setFilter] = useState<'all' | 'overdue' | 'due-soon' | 'done'>('all');
   const selectUpcoming = useAppStore((s) => s.selectUpcoming);
+  const lastChangeToken = useAppStore((s) => s.lastChangeToken);
   const classesFromStore = useAppStore((s) => s.classes);
   const appToggleDone = useAppStore((s) => s.toggleDone);
   const appUpdateAssignment = useAppStore((s) => s.updateAssignment);
   const appDeleteAssignment = useAppStore((s) => s.deleteAssignment);
 
-  const items = selectUpcoming(new Date(), { filter });
+  const items = useMemo(() => selectUpcoming(new Date(), { filter }), [filter, lastChangeToken, selectUpcoming]);
   const groups = useMemo(() => groupByDate(items), [items]);
 
   return (

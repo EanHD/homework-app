@@ -35,8 +35,9 @@ type AppStore = AppStoreState & AppStoreActions;
 
 const isArchived = (a: Assignment) => !!a.archivedAt;
 
-const isSameUtcDay = (d: Date, n: Date) =>
-  d.getUTCFullYear() === n.getUTCFullYear() && d.getUTCMonth() === n.getUTCMonth() && d.getUTCDate() === n.getUTCDate();
+// UI-facing day comparisons should use local day to match user expectations
+const isSameLocalDay = (d: Date, n: Date) =>
+  d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
 
 const byDueAsc = (a: Assignment, b: Assignment) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
 
@@ -117,7 +118,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   selectToday(now = new Date()) {
     const n = now;
-    const items = get().assignments.filter((a) => !isArchived(a) && isSameUtcDay(new Date(a.dueAt), n));
+    const items = get().assignments.filter((a) => !isArchived(a) && isSameLocalDay(new Date(a.dueAt), n));
     return items.sort(byDueAsc);
   },
 

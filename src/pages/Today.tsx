@@ -43,8 +43,9 @@ export default function TodayPage({ onAdd, onEdit, onDelete, onSnooze1h }: Today
     } catch {}
   }, [filter]);
 
+  const lastChangeToken2 = useAppStore((s) => s.lastChangeToken);
   const { total, completed, pct } = countTodayProgress();
-  const allToday = selectToday();
+  const allToday = useMemo(() => selectToday(), [selectToday, lastChangeToken2]);
 
   const items = useMemo(() => {
     const nowMs = Date.now();
