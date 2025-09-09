@@ -55,6 +55,25 @@ This repository uses the Speckit workflow to structure feature work from specifi
 - Do not run network installs or perform `git commit` unless explicitly requested by the user.
 - When validation isn’t feasible (e.g., no deps installed), state assumptions and offer follow‑ups.
 
+## App Store (Zustand) vs Legacy Context
+- New pages and UI should use the app store at `src/store/app.ts` (Zustand) for all reads/writes.
+- Pages should subscribe to `lastChangeToken` or select state slices so the UI re‑renders on mutations.
+- AssignmentForm falls back to app store actions (add/update/addClass) when legacy actions are not passed; prefer the app store path.
+- Use `loadAll()` on boot to hydrate, and keep `bootCleanup()` on boot to archive old completed items.
+- When computing Today, use local day (not UTC) to match user expectations.
+
+## Notifications
+- Use Mantine Notifications and render Undo as an inline `<Button>` inside `message`; do not rely on a non‑existent `action` prop in older Mantine versions.
+
+## Testing
+- Wrap UI tests with MantineProvider (`tests/utils/providers.tsx`).
+- jsdom shims: `tests/setup.ts` provides `matchMedia` and `ResizeObserver`.
+- Do not replace the Zustand store when resetting in tests (`useAppStore.setState(..., false)`) so methods remain defined.
+
+## SPA & Pages
+- Vite `base` is `/homework-app/` for GH Pages.
+- We include `public/404.html` to redirect unknown paths to base.
+
 ## When Tasks Are Missing
 - If a feature folder exists without `tasks.md`, reference templates in `templates/`:
   - `plan-template.md` describes Phase 2 outputs and constraints.
