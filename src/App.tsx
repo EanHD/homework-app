@@ -105,7 +105,7 @@ export default function App() {
           />
         );
       case 'classes':
-        return <ClassesPage state={state} />;
+        return <ClassesPage />;
       default:
         return null;
     }
