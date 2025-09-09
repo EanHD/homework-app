@@ -25,7 +25,7 @@
 - [ ] T003 Store (`src/store/app.ts`): create Zustand store with state `{ classes[], assignments[], lastChangeToken }`, actions `loadAll(), addClass(), updateClass(), deleteClass(), addAssignment(), updateAssignment(), deleteAssignment(), toggleDone()`; each action persists via repository THEN updates in-memory state and bumps `lastChangeToken`; add selectors `selectToday(now)`, `selectUpcoming(now, { includeDone, filter })`, `countTodayProgress(now)`; export a single store instance.
 
 ## Phase 3.2: M2 — Today & Header
-- [ ] T004 Today page (`src/pages/Today.tsx`): use store selectors to compute `totalToday` and `completedToday`; render `<ProgressHeader totalToday={X} completedToday={Y} />`; page re-renders when `lastChangeToken` changes; empty state CTA opens Assignment form; persist QuickFilters (All/Overdue/Today/Done) in URL hash.
+- [x] T004 Today page (`src/pages/Today.tsx`): use store selectors to compute `totalToday` and `completedToday`; render `<ProgressHeader totalToday={X} completedToday={Y} />`; page re-renders when `lastChangeToken` changes; empty state CTA opens Assignment form; persist QuickFilters (All/Overdue/Today/Done) in URL hash.
 - [ ] T005 Upcoming page (`src/pages/Upcoming.tsx`): group by date (dayjs); include Done items (muted + strikethrough + check); add filter pills: All | Overdue | Due soon (<=7d) | Done; do NOT remove items on toggleDone — only style/move when filtered by Done.
 
 ## Phase 3.3: M4 — Classes CRUD

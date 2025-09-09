@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import type { State, StoreActions } from '@/store/types';
-import { selectors } from '@/store/selectors';
+import { useEffect, useMemo, useState } from 'react';
+import type { StoreActions, State } from '@/store/types';
+import { useAppStore } from '@/store/app';
 import ProgressHeader from '@/ui/ProgressHeader';
 import QuickFilters, { type FilterValue } from '@/ui/QuickFilters';
 import EmptyState from '@/ui/EmptyState';
@@ -17,23 +17,50 @@ export type TodayPageProps = {
 };
 
 export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onSnooze1h }: TodayPageProps) {
+  // Prefer app store for reactivity; fall back to passed props if provided
+  const lastChangeToken = useAppStore((s) => s.lastChangeToken);
+  const selectToday = useAppStore((s) => s.selectToday);
+  const countTodayProgress = useAppStore((s) => s.countTodayProgress);
+  const appToggleDone = useAppStore((s) => s.toggleDone);
+  const appUpdateAssignment = useAppStore((s) => s.updateAssignment);
+  const appDeleteAssignment = useAppStore((s) => s.deleteAssignment);
+  const classesFromStore = useAppStore((s) => s.classes);
+
+  // Hash-persisted filter
   const [filter, setFilter] = useState<FilterValue>('all');
-  const classMap = selectors.getClassMap(state);
-  const items = selectors.getAssignmentsForToday(state);
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const f = params.get('filter') as FilterValue | null;
+      if (f === 'all' || f === 'overdue' || f === 'today' || f === 'done') setFilter(f);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      params.set('filter', filter);
+      const hash = params.toString();
+      window.history.replaceState(null, '', `#${hash}`);
+    } catch {}
+  }, [filter]);
 
-  const isSameUtcDay = (iso: string) => {
-    const d = new Date(iso);
-    const n = new Date();
-    return (
-      d.getUTCFullYear() === n.getUTCFullYear() &&
-      d.getUTCMonth() === n.getUTCMonth() &&
-      d.getUTCDate() === n.getUTCDate()
-    );
-  };
+  const { total, completed, pct } = countTodayProgress();
+  const allToday = selectToday();
 
-  const todaysAll = state.assignments.filter((a) => isSameUtcDay(a.dueAt));
-  const totalToday = todaysAll.length;
-  const completedToday = todaysAll.filter((a) => a.completed).length;
+  const items = useMemo(() => {
+    const nowMs = Date.now();
+    switch (filter) {
+      case 'overdue':
+        return allToday.filter((a) => !a.completed && new Date(a.dueAt).getTime() < nowMs);
+      case 'today':
+        return allToday.filter((a) => !a.completed && new Date(a.dueAt).getTime() >= nowMs);
+      case 'done':
+        return allToday.filter((a) => a.completed);
+      case 'all':
+      default:
+        return allToday;
+    }
+  }, [allToday, filter, lastChangeToken]);
 
   const filtered = useMemo(() => {
     switch (filter) {
@@ -50,7 +77,7 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
 
   return (
     <Stack gap="md">
-      <ProgressHeader totalToday={totalToday} completedToday={completedToday} />
+      <ProgressHeader totalToday={total} completedToday={completed} />
       <QuickFilters value={filter} onChange={setFilter} />
       {filtered.length === 0 ? (
         <EmptyState title="Nothing due. Breathe." onAction={onAdd} />
@@ -63,12 +90,28 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
               title={a.title}
               dueAt={a.dueAt}
               completed={a.completed}
-              classLabel={classMap[a.classId]?.name ?? '—'}
-              classColor={classMap[a.classId]?.color ?? 'gray'}
-              onToggleComplete={(id, next) => actions.toggleComplete(id, next)}
+              classLabel={(classesFromStore.find((c) => c.id === a.classId)?.name) ?? '—'}
+              classColor={(classesFromStore.find((c) => c.id === a.classId)?.color) ?? 'gray'}
+              onToggleComplete={async (id) => {
+                if (actions?.toggleComplete) {
+                  actions.toggleComplete(id, !a.completed);
+                } else {
+                  await appToggleDone(id);
+                }
+              }}
               onEdit={onEdit}
-              onDelete={onDelete}
-              onSnooze1h={onSnooze1h}
+              onDelete={async (id) => {
+                if (onDelete) return onDelete(id);
+                if (confirm('Delete this assignment?')) {
+                  if (actions?.removeAssignment) actions.removeAssignment(id);
+                  else await appDeleteAssignment(id);
+                }
+              }}
+              onSnooze1h={async (id) => {
+                const next = new Date(new Date(a.dueAt).getTime() + 60 * 60 * 1000).toISOString();
+                if (actions?.updateAssignment) actions.updateAssignment({ id, dueAt: next });
+                else await appUpdateAssignment({ id, dueAt: next } as any);
+              }}
             />
           ))}
         </Stack>
