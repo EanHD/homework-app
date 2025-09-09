@@ -53,6 +53,7 @@
 - [x] T023 [P] Accessibility/UI polish: focus order, aria labels, color contrast; empty states for lists.
 - [ ] T024 [P] Additional unit tests in `tests/unit/store.spec.ts` for persistence edge cases and streak boundaries (midnight/DST).
 - [ ] T025 GH Pages deploy: add `npm run build` output to `dist/`; add `vite.config.ts` `base` for repo path; add GitHub Actions workflow `.github/workflows/gh-pages.yml` to deploy `dist` to Pages.
+- [x] T025 GH Pages deploy: add `npm run build` output to `dist/`; add `vite.config.ts` `base` for repo path; add GitHub Actions workflow `.github/workflows/gh-pages.yml` to deploy `dist` to Pages.
 - [ ] T026 Readme: update project README with setup, dev, build, deploy instructions.
 
 ## Dependencies
