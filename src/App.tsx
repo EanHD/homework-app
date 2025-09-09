@@ -20,7 +20,7 @@ export default function App() {
 
   useEffect(() => store.subscribe(setState), [store]);
 
-  // Keyboard shortcuts: '/' open, Esc close, Enter submit when form open
+  // Keyboard shortcuts: 'a' or '/' open add, Esc close, Enter submit when form open
   useEffect(() => {
     const isTypingTarget = (el: EventTarget | null) => {
       if (!(el instanceof HTMLElement)) return false;
@@ -29,8 +29,8 @@ export default function App() {
       return editable || tag === 'input' || tag === 'textarea' || tag === 'select';
     };
     const onKey = (e: KeyboardEvent) => {
-      // '/' opens add form when not typing
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // 'a' or '/' opens add form when not typing
+      if ((e.key === '/' || e.key.toLowerCase() === 'a') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (!isTypingTarget(e.target)) {
           e.preventDefault();
           setEditingId(null);

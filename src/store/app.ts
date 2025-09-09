@@ -23,6 +23,7 @@ export type AppStoreActions = {
   updateAssignment: (input: Partial<Omit<Assignment, 'id'>> & { id: ID }) => Promise<void>;
   deleteAssignment: (id: ID) => Promise<void>;
   toggleDone: (id: ID) => Promise<void>;
+  restoreAssignment: (assignment: Assignment) => Promise<void>;
 
   // Selectors as methods for convenience
   selectToday: (now?: Date) => Assignment[];
@@ -107,6 +108,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set({ assignments, lastChangeToken: Date.now() });
   },
 
+  async restoreAssignment(assignment) {
+    const nextAssignments = [...get().assignments, backfill(assignment)];
+    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
+    await saveState(next);
+    set({ assignments: nextAssignments, lastChangeToken: Date.now() });
+  },
+
   selectToday(now = new Date()) {
     const n = now;
     const items = get().assignments.filter((a) => !isArchived(a) && isSameUtcDay(new Date(a.dueAt), n));
@@ -159,4 +167,3 @@ export function groupByDate(assignments: Assignment[]) {
   }
   return Array.from(map.entries());
 }
-

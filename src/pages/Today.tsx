@@ -6,6 +6,7 @@ import QuickFilters, { type FilterValue } from '@/ui/QuickFilters';
 import EmptyState from '@/ui/EmptyState';
 import AssignmentCard from '@/ui/AssignmentCard';
 import { Stack } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 
 export type TodayPageProps = {
   state: State;
@@ -98,13 +99,24 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
                 } else {
                   await appToggleDone(id);
                 }
+                notifications.show({
+                  message: a.completed ? 'Marked as not done' : 'Marked as done',
+                });
               }}
               onEdit={onEdit}
               onDelete={async (id) => {
                 if (onDelete) return onDelete(id);
                 if (confirm('Delete this assignment?')) {
+                  const removed = a;
                   if (actions?.removeAssignment) actions.removeAssignment(id);
                   else await appDeleteAssignment(id);
+                  const undoId = `undo-${id}`;
+                  notifications.show({ id: undoId, message: 'Assignment deleted',
+                    action: { label: 'Undo', onClick: async () => {
+                      if (actions?.addAssignment) actions.addAssignment(removed as any);
+                      else await useAppStore.getState().restoreAssignment(removed);
+                      notifications.update({ id: undoId, message: 'Restored', autoClose: 2000 });
+                    } }, autoClose: 10000 });
                 }
               }}
               onSnooze1h={async (id) => {
