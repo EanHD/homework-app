@@ -4,14 +4,14 @@ import { MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
 import './a11y.css';
 import App from './App';
-import theme from './theme';
+import uiTheme from '@/ui/theme';
 import './sw-registration';
 import { createStore } from '@/store/store';
 import { createScheduler } from '@/store/scheduler';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="light">
+    <MantineProvider theme={uiTheme} defaultColorScheme="light">
       <App />
     </MantineProvider>
   </React.StrictMode>
