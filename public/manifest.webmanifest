@@ -1,10 +1,10 @@
 {
-  "id": "/",
+  "id": "/homework-app/",
   "name": "Homework Buddy",
   "short_name": "Homework",
   "description": "Track classes and assignments. Today/Upcoming lists, streaks, and reminders.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/homework-app/",
+  "scope": "/homework-app/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1E88E5",
