@@ -43,7 +43,7 @@ export type Selectors = {
   byDueDateAscending(list: Assignment[]): Assignment[];
   progressPercent(state: State): number; // 0..100
   streakDays(state: State): number;
-  getClassMap?(state: State): Record<ID, Class>;
+  getClassMap(state: State): Record<ID, Class>;
 };
 
 export type Store = {
@@ -52,4 +52,3 @@ export type Store = {
   actions: StoreActions;
   getSelectors(): Selectors;
 };
-

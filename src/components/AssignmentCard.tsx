@@ -1,4 +1,5 @@
 import { Card, Group, Text, Checkbox, Badge, ActionIcon, Stack } from '@mantine/core';
+import type React from 'react';
 import dayjs from 'dayjs';
 
 export type AssignmentCardProps = {
@@ -31,7 +32,7 @@ export default function AssignmentCard({
       <Group align="flex-start" justify="space-between" wrap="nowrap">
         <Checkbox
           checked={completed}
-          onChange={(e) => onToggleComplete?.(id, e.currentTarget.checked)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onToggleComplete?.(id, e.currentTarget.checked)}
           aria-label={completed ? 'Mark incomplete' : 'Mark complete'}
         />
         <Stack gap={4} style={{ flex: 1 }}>

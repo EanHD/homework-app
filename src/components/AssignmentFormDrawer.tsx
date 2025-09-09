@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type React from 'react';
 import {
   Drawer,
   Button,
@@ -150,7 +151,7 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
           label="Title"
           placeholder="e.g., Essay draft"
           value={values.title}
-          onChange={(e) => setValues((v) => ({ ...v, title: e.currentTarget.value }))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, title: e.currentTarget.value }))}
           error={errors.title}
           required
         />
@@ -160,7 +161,7 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
           placeholder="Select a class"
           data={[{ value: '__new__', label: '➕ Create new class…' }, ...classOptions]}
           value={values.classMode === 'new' ? '__new__' : values.classId}
-          onChange={(val) =>
+          onChange={(val: string | null) =>
             setValues((v) =>
               val === '__new__'
                 ? { ...v, classMode: 'new', classId: '' }
@@ -177,7 +178,7 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
                 label="Name"
                 placeholder="e.g., History"
                 value={values.newClassName}
-                onChange={(e) => setValues((v) => ({ ...v, newClassName: e.currentTarget.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, newClassName: e.currentTarget.value }))}
                 error={errors.newClassName}
               />
               <TextInput
@@ -185,7 +186,7 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
                 placeholder="e.g., 📚"
                 maxLength={2}
                 value={values.newClassEmoji}
-                onChange={(e) => setValues((v) => ({ ...v, newClassEmoji: e.currentTarget.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, newClassEmoji: e.currentTarget.value }))}
                 error={errors.newClassEmoji}
               />
             </Group>
@@ -193,9 +194,8 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
               label="Color"
               format="hex"
               value={values.newClassColor}
-              onChange={(val) => setValues((v) => ({ ...v, newClassColor: val }))}
+              onChange={(val: string) => setValues((v) => ({ ...v, newClassColor: val }))}
               error={errors.newClassColor}
-              withinPortal
             />
           </Stack>
         )}
@@ -204,7 +204,7 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
           label="Due date/time"
           type="datetime-local"
           value={values.dueLocal}
-          onChange={(e) => setValues((v) => ({ ...v, dueLocal: e.currentTarget.value }))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, dueLocal: e.currentTarget.value }))}
           error={errors.dueLocal}
           required
         />
@@ -215,14 +215,14 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
           autosize
           minRows={2}
           value={values.notes}
-          onChange={(e) => setValues((v) => ({ ...v, notes: e.currentTarget.value }))}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setValues((v) => ({ ...v, notes: e.currentTarget.value }))}
         />
 
         <NumberInput
           label="Remind before (minutes)"
           placeholder="e.g., 30"
           value={values.remindAtMinutes}
-          onChange={(val) => setValues((v) => ({ ...v, remindAtMinutes: (val as number) ?? '' }))}
+          onChange={(val: string | number | undefined) => setValues((v) => ({ ...v, remindAtMinutes: (val as number) ?? '' }))}
           min={0}
           error={errors.remindAtMinutes}
         />
@@ -236,4 +236,3 @@ export default function AssignmentFormDrawer({ opened, onClose, actions, classes
     </Drawer>
   );
 }
-
