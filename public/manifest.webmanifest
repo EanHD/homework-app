@@ -1,0 +1,24 @@
+{
+  "id": "/",
+  "name": "Homework Buddy",
+  "short_name": "Homework",
+  "description": "Track classes and assignments. Today/Upcoming lists, streaks, and reminders.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1E88E5",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

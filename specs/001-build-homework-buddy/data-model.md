@@ -19,7 +19,8 @@
 - completedAt: ISO datetime | null
 - createdAt: ISO datetime
 - updatedAt: ISO datetime
-- notes: string | null (reserved, not required in v1)
+- notes: string | null
+- remindAtMinutes: number | null (minutes before dueAt to notify)
 
 ### Preferences
 - reminderOffsetMinutes: number (default 0; future enhancement)
@@ -32,10 +33,10 @@
 - addClass(input: { name: string; color: string; emoji: string }): Class
 - updateClass(id: string, patch: Partial<Class>): void
 - removeClass(id: string): void (cascades: reassign or delete assignments? Decision: delete assignments of removed class)
-- addAssignment(input: { title: string; classId: string; dueAt: string /* ISO */ }): Assignment
+- addAssignment(input: { title: string; classId: string; dueAt: string /* ISO */; notes?: string | null; remindAtMinutes?: number | null }): Assignment
 - updateAssignment(id: string, patch: Partial<Assignment>): void
 - removeAssignment(id: string): void
-- toggleComplete(id: string): void
+- toggleComplete(id: string, value?: boolean): void
 - hydrate(): Promise<void> (load from IndexedDB)
 - persist(): Promise<void> (internal; called on change debounce)
 
@@ -52,4 +53,3 @@
 - Overdue = dueAt < now and not completed.
 - Streak counts consecutive days, ending today, where at least one assignment was completed each day.
 - On class deletion, delete its assignments to avoid orphaned items.
-
