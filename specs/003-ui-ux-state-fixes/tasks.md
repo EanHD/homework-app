@@ -42,7 +42,7 @@
   - `tests/unit/store.progress.spec.ts`: today progress math (done/total, zero-state)
   - `tests/unit/store.archive.spec.ts`: `archiveCompletedOlderThan` archives items older than 90d
   - `tests/unit/ui/upcoming.spec.tsx`: done items remain visible after toggle; filters work
-- [ ] T011 README: document Done behavior + 90‑day archival; shortcuts list; how to reset local data for debugging.
+- [x] T011 README: document Done behavior + 90‑day archival; shortcuts list; how to reset local data for debugging.
 
 ## Dependencies
 - M1 (T001–T003) before pages/components (T004–T008) and polish/tests (T009–T011).

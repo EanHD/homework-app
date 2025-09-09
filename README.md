@@ -68,3 +68,21 @@ This repo follows Speckit (spec → plan → tasks → implementation):
   - Visible focus outlines, AA contrast, `prefers-reduced-motion` respected (see `src/a11y.css`).
 - Pages & integration:
   - Today/Upcoming/Classes pages in `src/pages/*` render redesigned UI while reusing existing data layer and selectors.
+
+## Done + Archive Behavior
+- Toggling Done sets `completed=true` and records `completedAt` (ISO). Untoggling clears `completedAt` and `completed=false`.
+- Upcoming keeps Done items visible (muted + strikethrough) until they are archived.
+- Background cleanup on app start archives assignments with `completedAt` older than 90 days by setting `archivedAt`. Archived items are excluded from default lists.
+- Today progress ring uses: done today / total due today (includes done).
+
+## Shortcuts
+- `a`: Add assignment (opens form)
+- `c`: Add class (on Classes page)
+- `/`: Add assignment (reserved for future search)
+- `e`: Edit focused card (where supported)
+- `Backspace`: Delete focused card with confirm; toast offers Undo (10s)
+
+## Reset Local Data (Debug)
+- In browser devtools console:
+  - `localforage.clear()` to wipe persisted state, then reload.
+- Or use Application → Storage in devtools to clear site data.
