@@ -73,17 +73,6 @@ export default function App() {
               setEditingId(id);
               setFormOpen(true);
             }}
-            onDelete={(id) => {
-              if (confirm('Delete this assignment?')) {
-                // UI pages handle deletion via app store; no-op here
-              }
-            }}
-            onSnooze1h={(id) => {
-              const a = state.assignments.find((x) => x.id === id);
-              if (!a) return;
-              const next = dayjs(a.dueAt).add(1, 'hour').toISOString();
-              // UI pages handle snooze via app store; no-op here
-            }}
           />
         );
       case 'upcoming':
@@ -92,17 +81,6 @@ export default function App() {
             onEdit={(id) => {
               setEditingId(id);
               setFormOpen(true);
-            }}
-            onDelete={(id) => {
-              if (confirm('Delete this assignment?')) {
-                // handled in page via app store
-              }
-            }}
-            onSnooze1h={(id) => {
-              const a = state.assignments.find((x) => x.id === id);
-              if (!a) return;
-              const next = dayjs(a.dueAt).add(1, 'hour').toISOString();
-              // handled in page via app store
             }}
           />
         );
