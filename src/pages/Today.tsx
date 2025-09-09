@@ -21,6 +21,20 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
   const classMap = selectors.getClassMap(state);
   const items = selectors.getAssignmentsForToday(state);
 
+  const isSameUtcDay = (iso: string) => {
+    const d = new Date(iso);
+    const n = new Date();
+    return (
+      d.getUTCFullYear() === n.getUTCFullYear() &&
+      d.getUTCMonth() === n.getUTCMonth() &&
+      d.getUTCDate() === n.getUTCDate()
+    );
+  };
+
+  const todaysAll = state.assignments.filter((a) => isSameUtcDay(a.dueAt));
+  const totalToday = todaysAll.length;
+  const completedToday = todaysAll.filter((a) => a.completed).length;
+
   const filtered = useMemo(() => {
     switch (filter) {
       case 'overdue':
@@ -36,7 +50,7 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
 
   return (
     <Stack gap="md">
-      <ProgressHeader state={state} />
+      <ProgressHeader totalToday={totalToday} completedToday={completedToday} />
       <QuickFilters value={filter} onChange={setFilter} />
       {filtered.length === 0 ? (
         <EmptyState title="Nothing due. Breathe." onAction={onAdd} />

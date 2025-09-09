@@ -1,36 +1,53 @@
-import { Group, Stack, Title, Text } from '@mantine/core';
-import { RingProgress } from '@mantine/core';
-import type { State } from '@/store/types';
-import { selectors } from '@/store/selectors';
+import { Group, Text, RingProgress, Center, Tooltip } from '@mantine/core';
 
-export type ProgressHeaderProps = {
-  state: State;
-  greetingName?: string;
-};
+export interface ProgressHeaderProps {
+  totalToday: number;
+  completedToday: number;
+}
 
-export default function ProgressHeader({ state, greetingName }: ProgressHeaderProps) {
-  const pct = selectors.progressPercent(state);
-  const name = greetingName?.trim() || 'there';
-  return (
-    <Group justify="space-between" align="center">
-      <Stack gap={4}>
-        <Title order={3}>Good {getDayPart()}, {name}</Title>
-        <Text c="dimmed">You're {pct}% done for today</Text>
-      </Stack>
+export default function ProgressHeader({ totalToday, completedToday }: ProgressHeaderProps) {
+  const hasTasks = totalToday > 0;
+  const pct = hasTasks ? Math.min(100, Math.round((completedToday / totalToday) * 100)) : 0;
+
+  const numericStyle = {
+    fontVariantNumeric: 'tabular-nums lining-nums',
+    fontFeatureSettings: '"tnum" 1, "lnum" 1',
+  } as const;
+
+  const ring = hasTasks ? (
+    <RingProgress
+      size={96}
+      thickness={10}
+      roundCaps
+      sections={[{ value: pct, color: 'blue.6' }]}
+      rootColor="gray.1"
+      label={
+        <Center style={{ flexDirection: 'column' }}>
+          <Text fw={700} style={numericStyle}>
+            {pct}%
+          </Text>
+          <Text c="dimmed" size="xs">
+            done
+          </Text>
+        </Center>
+      }
+    />
+  ) : (
+    <Tooltip label="No assignments yet">
       <RingProgress
         size={96}
         thickness={10}
-        sections={[{ value: pct, color: 'blue' }]}
-        label={<Text fw={700}>{pct}%</Text>}
+        roundCaps
+        sections={[{ value: 0, color: 'gray.3' }]}
+        rootColor="gray.1"
       />
+    </Tooltip>
+  );
+
+  // Keep ring aligned to the right; wrapper receives focus outline via global a11y.css when tabbed
+  return (
+    <Group justify="flex-end" align="center" wrap="nowrap" style={{ width: '100%' }}>
+      <div tabIndex={0} aria-label={hasTasks ? `${pct}% done` : 'No assignments yet'}>{ring}</div>
     </Group>
   );
 }
-
-function getDayPart() {
-  const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 18) return 'afternoon';
-  return 'evening';
-}
-
