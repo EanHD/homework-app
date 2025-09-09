@@ -9,15 +9,13 @@ import { Stack, Group, Button } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 export type TodayPageProps = {
-  state: State;
-  actions: StoreActions;
   onAdd?: () => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onSnooze1h?: (id: string) => void;
 };
 
-export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onSnooze1h }: TodayPageProps) {
+export default function TodayPage({ onAdd, onEdit, onDelete, onSnooze1h }: TodayPageProps) {
   // Prefer app store for reactivity; fall back to passed props if provided
   const lastChangeToken = useAppStore((s) => s.lastChangeToken);
   const selectToday = useAppStore((s) => s.selectToday);
@@ -94,11 +92,7 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
               classLabel={(classesFromStore.find((c) => c.id === a.classId)?.name) ?? '—'}
               classColor={(classesFromStore.find((c) => c.id === a.classId)?.color) ?? 'gray'}
               onToggleComplete={async (id) => {
-                if (actions?.toggleComplete) {
-                  actions.toggleComplete(id, !a.completed);
-                } else {
-                  await appToggleDone(id);
-                }
+                await appToggleDone(id);
                 notifications.show({
                   message: a.completed ? 'Marked as not done' : 'Marked as done',
                 });
@@ -108,8 +102,7 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
                 if (onDelete) return onDelete(id);
                 if (confirm('Delete this assignment?')) {
                   const removed = a;
-                  if (actions?.removeAssignment) actions.removeAssignment(id);
-                  else await appDeleteAssignment(id);
+                  await appDeleteAssignment(id);
                   const undoId = `undo-${id}`;
                   notifications.show({
                     id: undoId,
@@ -117,8 +110,7 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
                       <Group justify="space-between">
                         <span>Assignment deleted</span>
                         <Button size="xs" variant="light" onClick={async () => {
-                          if (actions?.addAssignment) actions.addAssignment(removed as any);
-                          else await useAppStore.getState().restoreAssignment(removed);
+                          await useAppStore.getState().restoreAssignment(removed);
                           notifications.update({ id: undoId, message: 'Restored', autoClose: 2000 });
                         }}>Undo</Button>
                       </Group>
@@ -129,8 +121,7 @@ export default function TodayPage({ state, actions, onAdd, onEdit, onDelete, onS
               }}
               onSnooze1h={async (id) => {
                 const next = new Date(new Date(a.dueAt).getTime() + 60 * 60 * 1000).toISOString();
-                if (actions?.updateAssignment) actions.updateAssignment({ id, dueAt: next });
-                else await appUpdateAssignment({ id, dueAt: next } as any);
+                await appUpdateAssignment({ id, dueAt: next } as any);
               }}
             />
           ))}

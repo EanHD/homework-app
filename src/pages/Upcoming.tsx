@@ -8,14 +8,12 @@ import { useAppStore, groupByDate } from '@/store/app';
 import dayjs from 'dayjs';
 
 export type UpcomingPageProps = {
-  state: State;
-  actions: StoreActions;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onSnooze1h?: (id: string) => void;
 };
 
-export default function UpcomingPage({ state, actions, onEdit, onDelete, onSnooze1h }: UpcomingPageProps) {
+export default function UpcomingPage({ onEdit, onDelete, onSnooze1h }: UpcomingPageProps) {
   const [filter, setFilter] = useState<'all' | 'overdue' | 'due-soon' | 'done'>('all');
   const selectUpcoming = useAppStore((s) => s.selectUpcoming);
   const classesFromStore = useAppStore((s) => s.classes);
@@ -53,8 +51,7 @@ export default function UpcomingPage({ state, actions, onEdit, onDelete, onSnooz
               classLabel={(classesFromStore.find((c) => c.id === a.classId)?.name) ?? '—'}
               classColor={(classesFromStore.find((c) => c.id === a.classId)?.color) ?? 'gray'}
               onToggleComplete={async (id) => {
-                if (actions?.toggleComplete) actions.toggleComplete(id, !a.completed);
-                else await appToggleDone(id);
+                await appToggleDone(id);
                 notifications.show({ message: a.completed ? 'Marked as not done' : 'Marked as done' });
               }}
               onEdit={onEdit}
@@ -62,8 +59,7 @@ export default function UpcomingPage({ state, actions, onEdit, onDelete, onSnooz
                 if (onDelete) return onDelete(id);
                 if (confirm('Delete this assignment?')) {
                     const removed = a;
-                    if (actions?.removeAssignment) actions.removeAssignment(id);
-                    else await appDeleteAssignment(id);
+                    await appDeleteAssignment(id);
                     const undoId = `undo-${id}`;
                     notifications.show({
                       id: undoId,
@@ -71,8 +67,7 @@ export default function UpcomingPage({ state, actions, onEdit, onDelete, onSnooz
                         <Group justify="space-between">
                           <span>Assignment deleted</span>
                           <Button size="xs" variant="light" onClick={async () => {
-                            if (actions?.addAssignment) actions.addAssignment(removed as any);
-                            else await useAppStore.getState().restoreAssignment(removed);
+                            await useAppStore.getState().restoreAssignment(removed);
                             notifications.update({ id: undoId, message: 'Restored', autoClose: 2000 });
                           }}>Undo</Button>
                         </Group>
@@ -83,8 +78,7 @@ export default function UpcomingPage({ state, actions, onEdit, onDelete, onSnooz
               }}
               onSnooze1h={async (id) => {
                 const next = dayjs(a.dueAt).add(1, 'hour').toISOString();
-                if (actions?.updateAssignment) actions.updateAssignment({ id, dueAt: next });
-                else await appUpdateAssignment({ id, dueAt: next } as any);
+                await appUpdateAssignment({ id, dueAt: next } as any);
               }}
             />
           ))}

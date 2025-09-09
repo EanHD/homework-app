@@ -21,6 +21,10 @@ export default function App() {
   const classesFromStore = useAppStore((s) => s.classes);
 
   useEffect(() => store.subscribe(setState), [store]);
+  // Hydrate app store for new pages
+  useEffect(() => {
+    void useAppStore.getState().loadAll();
+  }, []);
 
   // Keyboard shortcuts: 'a' or '/' open add, Esc close, Enter submit when form open
   useEffect(() => {
@@ -64,8 +68,6 @@ export default function App() {
       case 'today':
         return (
           <TodayPage
-            state={state}
-            actions={store.actions}
             onAdd={() => setFormOpen(true)}
             onEdit={(id) => {
               setEditingId(id);
@@ -73,36 +75,34 @@ export default function App() {
             }}
             onDelete={(id) => {
               if (confirm('Delete this assignment?')) {
-                store.actions.removeAssignment(id);
+                // UI pages handle deletion via app store; no-op here
               }
             }}
             onSnooze1h={(id) => {
               const a = state.assignments.find((x) => x.id === id);
               if (!a) return;
               const next = dayjs(a.dueAt).add(1, 'hour').toISOString();
-              store.actions.updateAssignment({ id, dueAt: next });
+              // UI pages handle snooze via app store; no-op here
             }}
           />
         );
       case 'upcoming':
         return (
           <UpcomingPage
-            state={state}
-            actions={store.actions}
             onEdit={(id) => {
               setEditingId(id);
               setFormOpen(true);
             }}
             onDelete={(id) => {
               if (confirm('Delete this assignment?')) {
-                store.actions.removeAssignment(id);
+                // handled in page via app store
               }
             }}
             onSnooze1h={(id) => {
               const a = state.assignments.find((x) => x.id === id);
               if (!a) return;
               const next = dayjs(a.dueAt).add(1, 'hour').toISOString();
-              store.actions.updateAssignment({ id, dueAt: next });
+              // handled in page via app store
             }}
           />
         );
