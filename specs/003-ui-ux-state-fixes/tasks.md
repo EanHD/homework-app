@@ -17,8 +17,8 @@
 - Include exact file paths in descriptions
 
 ## Phase 3.1: M1 — Store, Types, Deps
-- [ ] T001 Deps: install `zustand` and `nanoid`; keep Mantine as-is. Update `package.json`.
-- [ ] T002 Types & repository: extend `Assignment` in `src/store/types.ts` with `completedAt?: string | null`, `archivedAt?: string | null`; add `src/store/repository.ts` with methods:
+- [x] T001 Deps: install `zustand` and `nanoid`; keep Mantine as-is. Update `package.json`.
+- [x] T002 Types & repository: extend `Assignment` in `src/store/types.ts` with `completedAt?: string | null`, `archivedAt?: string | null`; add `src/store/repository.ts` with methods:
   - `toggleDone(id)` → set `completed` true/false and set/clear `completedAt` (now/ null)
   - `archiveCompletedOlderThan(days=90)` → set `archivedAt=now` for items with `completedAt < now-90d` and `archivedAt=null`
   - On app boot: invoke `archiveCompletedOlderThan()`
@@ -69,4 +69,3 @@ Task: Upcoming filters UI (src/pages/Upcoming.tsx) [P]
 - [ ] Classes CRUD works with counts
 - [ ] Hotkeys + toasts function
 - [ ] Tests passing; README updated
-

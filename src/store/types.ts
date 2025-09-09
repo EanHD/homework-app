@@ -15,6 +15,8 @@ export type Assignment = {
   completed: boolean;
   notes: string | null;
   remindAtMinutes: number | null; // minutes before dueAt
+  completedAt?: string | null;
+  archivedAt?: string | null;
 };
 
 export type Preferences = Record<string, unknown>;

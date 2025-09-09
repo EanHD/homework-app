@@ -8,6 +8,7 @@ import uiTheme from '@/ui/theme';
 import './sw-registration';
 import { createStore } from '@/store/store';
 import { createScheduler } from '@/store/scheduler';
+import { bootCleanup } from '@/store/repository';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -27,6 +28,8 @@ try {
   setTimeout(() => scheduler.checkNow(), 1000);
   // Optionally expose stop on window for debugging
   (window as any).__hbStopScheduler = stop;
+  // Background cleanup: archive done items older than 90 days
+  void bootCleanup();
 } catch {
   // ignore scheduler init errors in non-browser/test environments
 }
