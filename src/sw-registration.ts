@@ -3,7 +3,7 @@ import { Workbox } from 'workbox-window';
 
 export function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    const wb = new Workbox('/sw.js');
+    const wb = new Workbox(`${import.meta.env.BASE_URL}sw.js`);
     wb.addEventListener('activated', (event) => {
       if (!event.isUpdate) {
         // First install
@@ -16,4 +16,3 @@ export function registerServiceWorker() {
 
 // Auto-register by default
 registerServiceWorker();
-

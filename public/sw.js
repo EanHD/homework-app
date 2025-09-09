@@ -1,11 +1,14 @@
 /* Simple app-shell service worker with offline support and basic notification click handling */
-const CACHE_NAME = 'hb-app-shell-v1';
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/maskable.svg'];
+const CACHE_NAME = 'hb-app-shell-v2';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const base = new URL(self.registration.scope).pathname; // e.g., '/homework-app/' or '/'
+    const shell = [base, base + 'index.html', base + 'manifest.webmanifest', base + 'icon.svg', base + 'maskable.svg'];
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(shell);
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
@@ -27,12 +30,11 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
-        .then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/', resClone));
-          return res;
+        .then((res) => res)
+        .catch(() => {
+          const base = new URL(self.registration.scope).pathname;
+          return caches.match(base + 'index.html');
         })
-        .catch(() => caches.match('/index.html'))
     );
     return;
   }
@@ -63,4 +65,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-
