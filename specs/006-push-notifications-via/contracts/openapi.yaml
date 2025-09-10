@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Homework App Push API
+  version: 0.1.0
+servers:
+  - url: https://{project}.functions.supabase.co
+    variables:
+      project:
+        default: YOUR_PROJECT_ID
+paths:
+  /subscribe:
+    post:
+      summary: Upsert a web push subscription for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, endpoint, keys]
+              properties:
+                userId: { type: string }
+                endpoint: { type: string }
+                keys:
+                  type: object
+                  required: [p256dh, auth]
+                  properties:
+                    p256dh: { type: string }
+                    auth: { type: string }
+      responses:
+        '200':
+          description: Subscription stored/updated
+        '400':
+          description: Invalid input
+
+  /schedule:
+    post:
+      summary: Upsert a scheduled notification row (create/update/delete)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, assignmentId]
+              properties:
+                userId: { type: string }
+                assignmentId: { type: string }
+                title: { type: string }
+                body: { type: string }
+                sendAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: If null, delete any pending schedules for this assignment
+      responses:
+        '200': { description: Scheduled/updated/deleted }
+        '400': { description: Invalid input }
+
+  /send-notifications:
+    post:
+      summary: Cron-triggered function to deliver due notifications
+      description: Fetch unsent rows where send_at <= now and not in quiet hours; deliver to all valid subscriptions and mark sent.
+      responses:
+        '200': { description: Delivery attempted; report included }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+  schemas:
+    DeliveryReport:
+      type: object
+      properties:
+        delivered: { type: integer }
+        removedSubscriptions: { type: integer }
+        errors: { type: integer }
+

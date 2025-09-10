@@ -55,13 +55,33 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+// Handle incoming Web Push messages
+self.addEventListener('push', (event) => {
+  try {
+    const data = event.data && event.data.json ? event.data.json() : {};
+    const title = data.title || 'Homework Buddy';
+    const options = {
+      body: data.body,
+      data,
+      icon: '/homework-app/icons/icon-192.png',
+      badge: '/homework-app/icons/icon-192.png',
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch {
+    // ignore malformed payloads
+  }
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      const existing = clients.find((c) => 'focus' in c);
-      if (existing && 'focus' in existing) return existing.focus();
-      return self.clients.openWindow('/');
+      const data = (event.notification && event.notification.data) || {};
+      const url = (data && data.url) || '/homework-app/#/main';
+      for (const c of clients) {
+        if ('focus' in c) { c.navigate(url); return c.focus(); }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
     })
   );
 });
