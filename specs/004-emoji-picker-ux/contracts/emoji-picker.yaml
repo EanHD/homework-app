@@ -1,0 +1,145 @@
+````yaml
+# EmojiPicker Component Contract
+openapi: 3.0.3
+info:
+  title: EmojiPicker Component API
+  version: 1.0.0
+  description: Contract for the built-in emoji picker component
+
+components:
+  schemas:
+    EmojiCategory:
+      type: string
+      enum: [recent, smileys, animals, food, activities, travel, objects, symbols]
+    
+    EmojiData:
+      type: object
+      required: [emoji, name, category, keywords]
+      properties:
+        emoji:
+          type: string
+          description: Unicode emoji character
+          example: "😀"
+        name:
+          type: string
+          description: English name for the emoji
+          example: "Grinning Face"
+        category:
+          type: string
+          $ref: '#/components/schemas/EmojiCategory'
+        keywords:
+          type: array
+          items:
+            type: string
+          description: Search keywords
+          example: ["happy", "smile", "joy"]
+    
+    EmojiPickerProps:
+      type: object
+      required: [opened, onClose, onSelect]
+      properties:
+        opened:
+          type: boolean
+          description: Whether the picker is visible
+        onClose:
+          type: function
+          description: Callback when picker should close
+        onSelect:
+          type: function
+          description: Callback when emoji is selected (emoji: string) => void
+        target:
+          type: object
+          description: HTMLElement for positioning (optional)
+        searchable:
+          type: boolean
+          default: true
+          description: Whether to show search input
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmojiCategory'
+          description: Which categories to show (default: all)
+
+# Component Interface Contract
+paths:
+  /components/EmojiPicker:
+    post:
+      summary: Render EmojiPicker component
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmojiPickerProps'
+      responses:
+        '200':
+          description: Component rendered successfully
+          content:
+            text/html:
+              schema:
+                type: string
+                description: Rendered React component HTML
+        '400':
+          description: Invalid props provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "onSelect callback is required"
+
+# Event Contract
+events:
+  onSelect:
+    description: Fired when user selects an emoji
+    payload:
+      type: object
+      required: [emoji, timestamp]
+      properties:
+        emoji:
+          type: string
+          description: Selected emoji character
+          example: "🎯"
+        timestamp:
+          type: string
+          format: date-time
+          description: Selection timestamp
+        category:
+          $ref: '#/components/schemas/EmojiCategory'
+  
+  onClose:
+    description: Fired when picker should close
+    payload:
+      type: object
+      properties:
+        reason:
+          type: string
+          enum: [escape, clickOutside, selection]
+          description: Why the picker closed
+
+# localStorage Contract
+storage:
+  recent-emojis:
+    key: "homework-buddy/recent-emojis"
+    schema:
+      type: object
+      required: [emojis, lastUpdated]
+      properties:
+        emojis:
+          type: array
+          items:
+            type: string
+          maxItems: 24
+          description: Recently used emojis, most recent first
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Last update timestamp
+    operations:
+      - read: Get recent emojis on picker open
+      - write: Update when emoji selected
+      - cleanup: Remove old entries when >24 items
+
+````

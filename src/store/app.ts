@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import dayjs from 'dayjs';
 import type { Class, Assignment, State, ID } from './types';
 import { loadState, saveState } from './persistence';
-import { toggleDone as repoToggleDone } from './repository';
+import { toggleDone as repoToggleDone, exportData, importData } from './repository';
 
 type Filter = 'all' | 'overdue' | 'due-soon' | 'done';
 
@@ -11,6 +11,8 @@ export type AppStoreState = {
   classes: Class[];
   assignments: Assignment[];
   lastChangeToken: number;
+  seenOnboarding: boolean;
+  lastUndo: State | null;
 };
 
 export type AppStoreActions = {
@@ -24,6 +26,15 @@ export type AppStoreActions = {
   deleteAssignment: (id: ID) => Promise<void>;
   toggleDone: (id: ID) => Promise<void>;
   restoreAssignment: (assignment: Assignment) => Promise<void>;
+
+  // Data management
+  exportData: () => Promise<{ version: string; exportedAt: string; classes: any[]; assignments: any[] }>;
+  importData: (jsonData: string) => Promise<{ success: boolean; classesAdded: number; assignmentsAdded: number; errors: string[] }>;
+  
+  // Onboarding and undo
+  markOnboardingSeen: () => void;
+  captureUndo: () => Promise<void>;
+  performUndo: () => Promise<void>;
 
   // Selectors as methods for convenience
   selectToday: (now?: Date) => Assignment[];
@@ -49,12 +60,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   classes: [],
   assignments: [],
   lastChangeToken: 0,
+  seenOnboarding: false,
+  lastUndo: null,
 
   async loadAll() {
     const persisted = (await loadState()) as State | null;
     const classes = persisted?.classes ?? [];
     const assignments = (persisted?.assignments ?? []).map(backfill);
-    set({ classes, assignments, lastChangeToken: Date.now() });
+    const seenOnboarding = (persisted?.preferences?.seenOnboarding as boolean) ?? false;
+    set({ classes, assignments, seenOnboarding, lastChangeToken: Date.now() });
   },
 
   async addClass(input) {
@@ -114,6 +128,67 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
+  },
+
+  async exportData() {
+    return await exportData();
+  },
+
+  async importData(jsonData) {
+    try {
+      const payload = JSON.parse(jsonData);
+      const result = await importData(payload);
+      
+      // If import was successful, reload the state
+      if (result.success) {
+        await get().loadAll();
+      }
+      
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        classesAdded: 0,
+        assignmentsAdded: 0,
+        errors: [`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`],
+      };
+    }
+  },
+
+  async markOnboardingSeen() {
+    const persisted = (await loadState()) as State | null;
+    const currentPrefs = persisted?.preferences ?? {};
+    const next: State = { 
+      classes: get().classes, 
+      assignments: get().assignments, 
+      preferences: { ...currentPrefs, seenOnboarding: true } 
+    } as unknown as State;
+    await saveState(next);
+    set({ seenOnboarding: true });
+  },
+
+  async captureUndo() {
+    const currentState: State = {
+      classes: get().classes,
+      assignments: get().assignments,
+      preferences: {}
+    } as unknown as State;
+    set({ lastUndo: currentState });
+  },
+
+  async performUndo() {
+    const undoState = get().lastUndo;
+    if (!undoState) return;
+    
+    await saveState(undoState);
+    const classes = undoState.classes ?? [];
+    const assignments = (undoState.assignments ?? []).map(backfill);
+    set({ 
+      classes, 
+      assignments, 
+      lastChangeToken: Date.now(),
+      lastUndo: null 
+    });
   },
 
   selectToday(now = new Date()) {

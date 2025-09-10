@@ -1,0 +1,202 @@
+````yaml
+# OnboardingGuide Component Contract
+openapi: 3.0.3
+info:
+  title: OnboardingGuide Component API
+  version: 1.0.0
+  description: Contract for first-run onboarding experience
+
+components:
+  schemas:
+    OnboardingStep:
+      type: object
+      required: [title, description, position]
+      properties:
+        title:
+          type: string
+          maxLength: 50
+          example: "Welcome to Homework Buddy"
+        description:
+          type: string
+          maxLength: 200
+          example: "Track your assignments and never miss a deadline"
+        target:
+          type: string
+          description: CSS selector for highlight target (optional)
+          example: "[data-testid='today-view']"
+        position:
+          type: string
+          enum: [top, bottom, left, right, center]
+          description: Callout position relative to target
+    
+    OnboardingGuideProps:
+      type: object
+      required: [onComplete, onSkip, onAddSampleData]
+      properties:
+        onComplete:
+          type: function
+          description: Called when onboarding finishes successfully
+        onSkip:
+          type: function
+          description: Called when user skips onboarding
+        onAddSampleData:
+          type: function
+          description: Async function to add sample classes and assignments
+    
+    SampleData:
+      type: object
+      required: [classes, assignments]
+      properties:
+        classes:
+          type: array
+          items:
+            type: object
+            required: [name, emoji, color]
+            properties:
+              name:
+                type: string
+                example: "Mathematics"
+              emoji:
+                type: string
+                example: "🧮"
+              color:
+                type: string
+                pattern: "^#[0-9A-Fa-f]{6}$"
+                example: "#2196F3"
+        assignments:
+          type: array
+          items:
+            type: object
+            required: [title, dueAt, completed]
+            properties:
+              title:
+                type: string
+                example: "Review algebra homework"
+              dueAt:
+                type: string
+                format: date-time
+              completed:
+                type: boolean
+                default: false
+              notes:
+                type: string
+                nullable: true
+              remindAtMinutes:
+                type: number
+                nullable: true
+
+# Component Flow Contract
+paths:
+  /onboarding/start:
+    post:
+      summary: Initialize onboarding flow
+      responses:
+        '200':
+          description: Onboarding started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  steps:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OnboardingStep'
+                  canSkip:
+                    type: boolean
+                    default: true
+        '409':
+          description: Onboarding already completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Onboarding already completed"
+
+  /onboarding/sample-data:
+    post:
+      summary: Generate and add sample data
+      responses:
+        '200':
+          description: Sample data added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  classesAdded:
+                    type: number
+                    example: 2
+                  assignmentsAdded:
+                    type: number
+                    example: 3
+        '400':
+          description: Sample data generation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Failed to create sample assignments"
+
+# Events Contract
+events:
+  onComplete:
+    description: User completed onboarding successfully
+    payload:
+      type: object
+      properties:
+        completedAt:
+          type: string
+          format: date-time
+        stepsCompleted:
+          type: number
+          minimum: 0
+          maximum: 3
+        sampleDataAdded:
+          type: boolean
+
+  onSkip:
+    description: User skipped onboarding
+    payload:
+      type: object
+      properties:
+        skippedAt:
+          type: string
+          format: date-time
+        currentStep:
+          type: number
+          description: Which step they were on when skipping
+
+# localStorage Contract  
+storage:
+  onboarding-state:
+    key: "homework-buddy/onboarding"
+    schema:
+      type: object
+      required: [completed, skipped]
+      properties:
+        completed:
+          type: boolean
+          description: Whether onboarding was completed
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        skipped:
+          type: boolean
+          description: Whether user skipped onboarding
+        sampleDataAdded:
+          type: boolean
+          description: Whether sample data was added
+    operations:
+      - read: Check completion status on app start
+      - write: Update when onboarding completes/skips
+      - clear: Reset for testing (dev only)
+
+````

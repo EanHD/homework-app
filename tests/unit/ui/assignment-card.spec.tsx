@@ -43,7 +43,7 @@ describe('UI: AssignmentCard', () => {
     expect(onEdit).toHaveBeenCalledWith('a1');
 
     await user.click(more);
-    await user.click(await screen.findByRole('menuitem', { name: /snooze 1h/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /\+1 hour/i }));
     expect(onSnooze1h).toHaveBeenCalledWith('a1');
 
     await user.click(more);

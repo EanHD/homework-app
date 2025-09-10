@@ -65,3 +65,85 @@ export async function bootCleanup(): Promise<void> {
   }
 }
 
+// Export data to JSON format
+export async function exportData(): Promise<{ version: string; exportedAt: string; classes: any[]; assignments: any[] }> {
+  const state = (await loadState()) as State | null;
+  if (!state) {
+    return {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      classes: [],
+      assignments: [],
+    };
+  }
+  
+  return {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    classes: state.classes,
+    assignments: state.assignments,
+  };
+}
+
+// Import data with merge strategy
+export async function importData(payload: { version?: string; classes?: any[]; assignments?: any[] }): Promise<{ success: boolean; classesAdded: number; assignmentsAdded: number; errors: string[] }> {
+  try {
+    const state = (await loadState()) as State | null;
+    const currentState: State = state ?? ({ classes: [], assignments: [], preferences: {} } as unknown as State);
+    
+    const errors: string[] = [];
+    let classesAdded = 0;
+    let assignmentsAdded = 0;
+    
+    // Validate version
+    if (payload.version && payload.version !== '1.0') {
+      errors.push(`Unsupported version: ${payload.version}`);
+    }
+    
+    // Merge classes
+    const existingClassIds = new Set(currentState.classes.map(c => c.id));
+    const newClasses = (payload.classes || []).filter(c => {
+      if (!c.id || !c.name) {
+        errors.push('Invalid class data: missing id or name');
+        return false;
+      }
+      return !existingClassIds.has(c.id);
+    });
+    classesAdded = newClasses.length;
+    
+    // Merge assignments
+    const existingAssignmentIds = new Set(currentState.assignments.map(a => a.id));
+    const newAssignments = (payload.assignments || []).filter(a => {
+      if (!a.id || !a.title || !a.classId) {
+        errors.push('Invalid assignment data: missing required fields');
+        return false;
+      }
+      return !existingAssignmentIds.has(a.id);
+    });
+    assignmentsAdded = newAssignments.length;
+    
+    // Save merged state
+    const mergedState: State = {
+      ...currentState,
+      classes: [...currentState.classes, ...newClasses],
+      assignments: [...currentState.assignments, ...newAssignments],
+    } as State;
+    
+    await saveState(mergedState);
+    
+    return {
+      success: errors.length === 0,
+      classesAdded,
+      assignmentsAdded,
+      errors,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      classesAdded: 0,
+      assignmentsAdded: 0,
+      errors: [`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
+    };
+  }
+}
+

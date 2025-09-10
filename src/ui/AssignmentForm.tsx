@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Button,
   TextInput,
@@ -13,10 +13,12 @@ import {
   Modal,
   Drawer,
   Switch,
+  Box,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Assignment, Class, ID, StoreActions } from '@/store/types';
 import { useAppStore } from '@/store/app';
+import EmojiButton from '@/ui/EmojiButton';
 
 export type AssignmentFormValues = {
   title: string;
@@ -78,6 +80,7 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
   const isDesktop = useMediaQuery('(min-width: 64em)'); // ~1024px
   const [values, setValues] = useState<AssignmentFormValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const addClassStore = useAppStore((s) => s.addClass);
   const addAssignmentStore = useAppStore((s) => s.addAssignment);
   const updateAssignmentStore = useAppStore((s) => s.updateAssignment);
@@ -248,14 +251,44 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
         />
       </Group>
 
-      <Textarea
-        label="Notes"
-        placeholder="Optional notes"
-        autosize
-        minRows={2}
-        value={values.notes}
-        onChange={(e) => setValues((v) => ({ ...v, notes: e.currentTarget.value }))}
-      />
+      <Box>
+        <Group justify="space-between" mb="xs">
+          <Text component="label" size="sm" fw={500}>
+            Notes
+          </Text>
+          <EmojiButton
+            size="sm"
+            ariaLabel="Add emoji to notes"
+            onChange={(emoji) => {
+              const textarea = notesRef.current;
+              if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const currentValue = values.notes;
+                const newValue = currentValue.slice(0, start) + emoji + currentValue.slice(end);
+                setValues((v) => ({ ...v, notes: newValue }));
+                
+                // Restore cursor position after the emoji
+                setTimeout(() => {
+                  textarea.focus();
+                  textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+                }, 0);
+              } else {
+                // Fallback: append to end
+                setValues((v) => ({ ...v, notes: v.notes + emoji }));
+              }
+            }}
+          />
+        </Group>
+        <Textarea
+          ref={notesRef}
+          placeholder="Optional notes"
+          autosize
+          minRows={2}
+          value={values.notes}
+          onChange={(e) => setValues((v) => ({ ...v, notes: e.currentTarget.value }))}
+        />
+      </Box>
 
       <Group align="flex-end" gap="md">
         <Switch

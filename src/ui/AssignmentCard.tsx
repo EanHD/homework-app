@@ -1,6 +1,6 @@
 import { Card, Group, Text, Checkbox, Badge, ActionIcon, Menu, Stack } from '@mantine/core';
 import dayjs from 'dayjs';
-import { IconDots, IconPencil, IconTrash, IconClockHour1 } from '@tabler/icons-react';
+import { IconDots, IconPencil, IconTrash, IconClockHour1, IconSun, IconMoon } from '@tabler/icons-react';
 
 export type AssignmentCardProps = {
   id: string;
@@ -13,6 +13,8 @@ export type AssignmentCardProps = {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onSnooze1h?: (id: string) => void;
+  onSnoozeTonight?: (id: string) => void;
+  onSnoozeTomorrow?: (id: string) => void;
 };
 
 export default function AssignmentCard({
@@ -26,6 +28,8 @@ export default function AssignmentCard({
   onEdit,
   onDelete,
   onSnooze1h,
+  onSnoozeTonight,
+  onSnoozeTomorrow,
 }: AssignmentCardProps) {
   const due = dayjs(dueAt);
   const overdue = !completed && due.isBefore(dayjs());
@@ -60,7 +64,22 @@ export default function AssignmentCard({
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item leftSection={<IconPencil size={16} />} onClick={() => onEdit?.(id)}>Edit</Menu.Item>
-            <Menu.Item leftSection={<IconClockHour1 size={16} />} onClick={() => onSnooze1h?.(id)}>Snooze 1h</Menu.Item>
+            
+            {!completed && (
+              <>
+                <Menu.Label>Snooze</Menu.Label>
+                <Menu.Item leftSection={<IconClockHour1 size={16} />} onClick={() => onSnooze1h?.(id)}>
+                  +1 hour
+                </Menu.Item>
+                <Menu.Item leftSection={<IconMoon size={16} />} onClick={() => onSnoozeTonight?.(id)}>
+                  Tonight 8pm
+                </Menu.Item>
+                <Menu.Item leftSection={<IconSun size={16} />} onClick={() => onSnoozeTomorrow?.(id)}>
+                  Tomorrow 9am
+                </Menu.Item>
+              </>
+            )}
+            
             <Menu.Divider />
             <Menu.Item color="red" leftSection={<IconTrash size={16} />} onClick={() => onDelete?.(id)}>Delete</Menu.Item>
           </Menu.Dropdown>

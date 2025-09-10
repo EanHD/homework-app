@@ -1,0 +1,254 @@
+````yaml
+# Export/Import API Contract
+openapi: 3.0.3
+info:
+  title: Export/Import Data API
+  version: 1.0.0
+  description: Contract for backup and restore functionality
+
+components:
+  schemas:
+    ExportData:
+      type: object
+      required: [version, exportedAt, classes, assignments]
+      properties:
+        version:
+          type: string
+          pattern: "^\\d+\\.\\d+$"
+          example: "1.0"
+          description: Schema version for compatibility
+        exportedAt:
+          type: string
+          format: date-time
+          description: Export timestamp
+        classes:
+          type: array
+          items:
+            type: object
+            required: [id, name, emoji, color]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              emoji:
+                type: string
+              color:
+                type: string
+        assignments:
+          type: array
+          items:
+            type: object
+            required: [id, title, classId, dueAt, completed]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              classId:
+                type: string
+              dueAt:
+                type: string
+                format: date-time
+              completed:
+                type: boolean
+              notes:
+                type: string
+                nullable: true
+              remindAtMinutes:
+                type: number
+                nullable: true
+              completedAt:
+                type: string
+                format: date-time
+                nullable: true
+              archivedAt:
+                type: string
+                format: date-time
+                nullable: true
+    
+    ImportResult:
+      type: object
+      required: [success, classesAdded, assignmentsAdded, errors]
+      properties:
+        success:
+          type: boolean
+          description: Whether import completed successfully
+        classesAdded:
+          type: number
+          minimum: 0
+          description: Number of new classes added
+        assignmentsAdded:
+          type: number
+          minimum: 0
+          description: Number of new assignments added
+        classesSkipped:
+          type: number
+          minimum: 0
+          description: Number of classes skipped (duplicates)
+        assignmentsSkipped:
+          type: number
+          minimum: 0
+          description: Number of assignments skipped (duplicates)
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of validation or processing errors
+
+# API Endpoints Contract
+paths:
+  /data/export:
+    get:
+      summary: Export all user data
+      responses:
+        '200':
+          description: Data exported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportData'
+        '500':
+          description: Export failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Failed to read assignment data"
+
+  /data/download:
+    post:
+      summary: Trigger download of backup file
+      responses:
+        '200':
+          description: Download initiated
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="homework-buddy-backup-2025-09-09.json"'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportData'
+
+  /data/import:
+    post:
+      summary: Import data from backup file
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: string
+                  description: JSON string of exported data
+                mergeStrategy:
+                  type: string
+                  enum: [merge, replace]
+                  default: merge
+                  description: How to handle conflicts
+      responses:
+        '200':
+          description: Import completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+        '400':
+          description: Invalid import data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid JSON format"
+                  details:
+                    type: array
+                    items:
+                      type: string
+
+  /data/validate:
+    post:
+      summary: Validate import data without importing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: string
+                  description: JSON string to validate
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [valid, errors]
+                properties:
+                  valid:
+                    type: boolean
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+
+# File Format Contract
+fileFormats:
+  backup:
+    extension: ".json"
+    mimeType: "application/json"
+    naming: "homework-buddy-backup-YYYY-MM-DD.json"
+    maxSize: "10MB"
+    encoding: "UTF-8"
+    structure:
+      $ref: '#/components/schemas/ExportData'
+
+# Validation Rules
+validation:
+  version:
+    - must be semantic version format (X.Y)
+    - must be supported version (1.0 currently)
+  
+  classes:
+    - id must be unique within import
+    - name must be non-empty string
+    - emoji must be valid Unicode emoji
+    - color must be valid hex color
+  
+  assignments:
+    - id must be unique within import
+    - classId must reference existing or imported class
+    - dueAt must be valid ISO datetime
+    - if completedAt exists, must be <= dueAt
+    - if archivedAt exists, completedAt must exist
+
+# Merge Strategy
+mergeRules:
+  classes:
+    conflictResolution: "skip existing, add new"
+    keyField: "id"
+    
+  assignments:
+    conflictResolution: "skip existing, add new"
+    keyField: "id"
+    timestampComparison: "newest wins for updates"
+
+````

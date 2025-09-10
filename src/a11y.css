@@ -16,6 +16,22 @@
 :focus-visible {
   outline: 2px solid var(--mantine-color-blue-6);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Enhanced focus for interactive elements */
+.mantine-Button-root:focus-visible,
+.mantine-ActionIcon-root:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.1);
+}
+
+/* Focus for custom components */
+[data-focus-ring]:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Smooth UI transitions (kept subtle) */

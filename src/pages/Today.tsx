@@ -96,6 +96,8 @@ export default function TodayPage({ onAdd, onEdit, onDelete, onSnooze1h }: Today
                 await appToggleDone(id);
                 notifications.show({
                   message: a.completed ? 'Marked as not done' : 'Marked as done',
+                  color: a.completed ? 'blue' : 'green',
+                  autoClose: 3000,
                 });
               }}
               onEdit={onEdit}
@@ -117,12 +119,42 @@ export default function TodayPage({ onAdd, onEdit, onDelete, onSnooze1h }: Today
                       </Group>
                     ),
                     autoClose: 10000,
+                    color: 'red',
                   });
                 }
               }}
               onSnooze1h={async (id) => {
                 const next = new Date(new Date(a.dueAt).getTime() + 60 * 60 * 1000).toISOString();
                 await appUpdateAssignment({ id, dueAt: next } as any);
+                notifications.show({
+                  message: 'Snoozed for 1 hour',
+                  color: 'blue',
+                  autoClose: 3000,
+                });
+              }}
+              onSnoozeTonight={async (id) => {
+                const tonight = new Date();
+                tonight.setHours(20, 0, 0, 0); // 8 PM tonight
+                if (tonight <= new Date()) {
+                  tonight.setDate(tonight.getDate() + 1); // If 8 PM has passed, schedule for tomorrow
+                }
+                await appUpdateAssignment({ id, dueAt: tonight.toISOString() } as any);
+                notifications.show({
+                  message: 'Snoozed until tonight at 8 PM',
+                  color: 'blue',
+                  autoClose: 3000,
+                });
+              }}
+              onSnoozeTomorrow={async (id) => {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(9, 0, 0, 0); // 9 AM tomorrow
+                await appUpdateAssignment({ id, dueAt: tomorrow.toISOString() } as any);
+                notifications.show({
+                  message: 'Snoozed until tomorrow at 9 AM',
+                  color: 'blue',
+                  autoClose: 3000,
+                });
               }}
             />
           ))}
