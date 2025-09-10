@@ -232,7 +232,7 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
                 size="sm"
                 style={{ flex: 1 }}
               />
-              <EmojiButton value={values.newClassEmoji} onChange={(emoji) => setValues((v) => ({ ...v, newClassEmoji: emoji }))} size="sm" ariaLabel="Choose emoji" />
+              <EmojiButton value={values.newClassEmoji} onChange={(emoji) => setValues((v) => ({ ...v, newClassEmoji: emoji }))} size="sm" ariaLabel="Choose emoji" forceSmileyTrigger />
             </Group>
           </SimpleGrid>
           <Box>

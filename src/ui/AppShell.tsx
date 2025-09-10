@@ -17,10 +17,11 @@ import {
   IconCalendarTime,
   IconBooks,
   IconPlus,
+  IconSettings,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 
-export type NavKey = 'today' | 'upcoming' | 'classes';
+export type NavKey = 'today' | 'upcoming' | 'classes' | 'settings';
 
 export type AppShellProps = {
   active: NavKey;
@@ -34,6 +35,7 @@ const navItems: { key: NavKey; label: string; icon: React.FC<any> }[] = [
   { key: 'today', label: 'Today', icon: IconCalendarDue },
   { key: 'upcoming', label: 'Upcoming', icon: IconCalendarTime },
   { key: 'classes', label: 'Classes', icon: IconBooks },
+  { key: 'settings', label: 'Settings', icon: IconSettings },
 ];
 
 export default function AppShell({ active, onNavigate, onAdd, children, title }: AppShellProps) {

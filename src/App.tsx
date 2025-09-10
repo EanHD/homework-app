@@ -3,6 +3,7 @@ import AppShell from '@/ui/AppShell';
 import TodayPage from '@/pages/Today';
 import UpcomingPage from '@/pages/Upcoming';
 import ClassesPage from '@/pages/Classes';
+import SettingsPage from '@/pages/Settings';
 import { createStore } from '@/store/store';
 import type { NavKey } from '@/ui/AppShell';
 import type { State } from '@/store/types';
@@ -86,6 +87,8 @@ export default function App() {
         );
       case 'classes':
         return <ClassesPage />;
+      case 'settings':
+        return <SettingsPage />;
       default:
         return null;
     }
