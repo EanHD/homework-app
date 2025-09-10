@@ -19,6 +19,7 @@ export default function TodayPage({ onAdd, onEdit, onDelete, onSnooze1h }: Today
   // Prefer app store for reactivity; fall back to passed props if provided
   const lastChangeToken = useAppStore((s) => s.lastChangeToken);
   const selectToday = useAppStore((s) => s.selectToday);
+  const selectDone = useAppStore((s) => s.selectDone);
   const countTodayProgress = useAppStore((s) => s.countTodayProgress);
   const appToggleDone = useAppStore((s) => s.toggleDone);
   const appUpdateAssignment = useAppStore((s) => s.updateAssignment);
@@ -55,12 +56,12 @@ export default function TodayPage({ onAdd, onEdit, onDelete, onSnooze1h }: Today
       case 'today':
         return allToday.filter((a) => !a.completed && new Date(a.dueAt).getTime() >= nowMs);
       case 'done':
-        return allToday.filter((a) => a.completed);
+        return selectDone();
       case 'all':
       default:
         return allToday;
     }
-  }, [allToday, filter, lastChangeToken]);
+  }, [allToday, filter, lastChangeToken, selectDone]);
 
   const filtered = useMemo(() => {
     switch (filter) {
@@ -90,6 +91,7 @@ export default function TodayPage({ onAdd, onEdit, onDelete, onSnooze1h }: Today
               title={a.title}
               dueAt={a.dueAt}
               completed={a.completed}
+              completedAt={a.completedAt}
               classLabel={(classesFromStore.find((c) => c.id === a.classId)?.name) ?? '—'}
               classColor={(classesFromStore.find((c) => c.id === a.classId)?.color) ?? 'gray'}
               onToggleComplete={async (id) => {

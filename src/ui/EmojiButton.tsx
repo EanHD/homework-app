@@ -89,10 +89,11 @@ export default function EmojiButton({
     setPrefs(prev => ({ ...prev, skinTone }));
   };
 
-  const buttonContent = value ? (
+  const current = value ?? '📚';
+  const buttonContent = current ? (
     <Group gap={4} align="center">
       <Text component="span" style={{ fontSize: size === 'xs' ? 12 : size === 'sm' ? 14 : size === 'lg' ? 20 : size === 'xl' ? 24 : 16 }}>
-        {value}
+        {current}
       </Text>
       {withLabel && <Text size="sm">Change</Text>}
     </Group>
@@ -109,6 +110,8 @@ export default function EmojiButton({
       position="bottom"
       withArrow={!reducedMotion}
       shadow="md"
+      zIndex={400}
+      withinPortal={false}
       opened={opened}
       onChange={setOpened}
       transitionProps={{ duration: reducedMotion ? 0 : 200 }}
@@ -122,15 +125,23 @@ export default function EmojiButton({
           disabled={disabled}
           aria-label={value ? `${ariaLabel} (current: ${value})` : ariaLabel}
           aria-expanded={opened}
-          aria-haspopup="dialog"
+          aria-haspopup="true"
           data-focus-ring
+          className={reducedMotion ? 'reducedMotion' : undefined}
+          onKeyDown={(e) => {
+            if ((e.key === 'e' || e.key === 'E') && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              setOpened((o) => !o);
+            }
+            if (e.key === 'Escape') setOpened(false);
+          }}
         >
           {buttonContent}
         </ActionIcon>
       </Popover.Target>
 
       <Popover.Dropdown p={0}>
-        <Box style={{ 
+        <Box data-testid="emoji-picker" style={{ 
           '& .EmojiMart': { 
             border: 'none',
             backgroundColor: 'var(--mantine-color-body)',

@@ -1,13 +1,16 @@
 import { selectors } from './selectors';
 import type { Assignment, Store } from './types';
 import { showNotification } from './notifications';
+import { useSettingsStore, isWithinQuietHours } from './settings';
 
 const ONE_MIN = 60 * 1000;
 const WINDOW_AHEAD = 24 * 60 * ONE_MIN; // schedule up to 24h ahead
 
 function triggerTime(a: Assignment): number {
   const due = new Date(a.dueAt).getTime();
-  const offset = (a.remindAtMinutes ?? 0) * ONE_MIN;
+  const settings = useSettingsStore.getState();
+  const effectiveOffsetMin = (a.remindAtMinutes ?? settings.reminderOffset) as number;
+  const offset = (effectiveOffsetMin || 0) * ONE_MIN;
   return Math.max(0, due - offset);
 }
 
@@ -23,6 +26,16 @@ export function createScheduler(store: Store) {
     if (a.completed) return;
     const t = triggerTime(a);
     const now = Date.now();
+    // Respect quiet hours: if reminder time falls inside quiet hours, do not schedule
+    const settings = useSettingsStore.getState();
+    if (settings.quietHours.enabled) {
+      const d = new Date(t);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      if (isWithinQuietHours(`${hh}:${mm}`, settings.quietHours.start, settings.quietHours.end)) {
+        return;
+      }
+    }
     if (t <= now) {
       void notifyAssignment(a);
       return;
@@ -53,6 +66,10 @@ export function createScheduler(store: Store) {
 
   const checkNow = () => {
     cancelAll();
+    const settings = useSettingsStore.getState();
+    if (!settings.notificationsEnabled) {
+      return; // globally disabled
+    }
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission !== 'granted') {
         // Don't schedule timers when permission not granted

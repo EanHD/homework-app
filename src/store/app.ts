@@ -39,6 +39,7 @@ export type AppStoreActions = {
   // Selectors as methods for convenience
   selectToday: (now?: Date) => Assignment[];
   selectUpcoming: (now?: Date, opts?: { includeDone?: boolean; filter?: Filter }) => Assignment[];
+  selectDone: (now?: Date) => Assignment[];
   countTodayProgress: (now?: Date) => { total: number; completed: number; pct: number };
 };
 
@@ -221,6 +222,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         }
       })
       .sort(byDueAsc);
+  },
+
+  selectDone(now = new Date()) {
+    const list = get().assignments.filter((a) => !isArchived(a) && a.completed);
+    return list.sort((a, b) => {
+      const ta = a.completedAt ? Date.parse(a.completedAt) : -Infinity;
+      const tb = b.completedAt ? Date.parse(b.completedAt) : -Infinity;
+      return tb - ta;
+    });
   },
 
   countTodayProgress(now = new Date()) {

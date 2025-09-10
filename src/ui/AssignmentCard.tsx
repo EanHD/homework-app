@@ -1,4 +1,4 @@
-import { Card, Group, Text, Checkbox, Badge, ActionIcon, Menu, Stack } from '@mantine/core';
+import { Card, Group, Text, Checkbox, Badge, ActionIcon, Menu, Stack, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import { IconDots, IconPencil, IconTrash, IconClockHour1, IconSun, IconMoon } from '@tabler/icons-react';
 
@@ -7,6 +7,7 @@ export type AssignmentCardProps = {
   title: string;
   dueAt: string; // ISO
   completed: boolean;
+  completedAt?: string | null;
   classLabel: string;
   classColor: string; // hex or Mantine color
   onToggleComplete?: (id: string, next: boolean) => void;
@@ -22,6 +23,7 @@ export default function AssignmentCard({
   title,
   dueAt,
   completed,
+  completedAt,
   classLabel,
   classColor,
   onToggleComplete,
@@ -52,9 +54,22 @@ export default function AssignmentCard({
               <Badge color={classColor || 'gray'} variant="filled">{classLabel}</Badge>
             )}
           </Group>
-          <Text size="sm" c={overdue ? 'red.6' : 'dimmed'}>
-            {overdue ? 'Overdue • ' : 'Due • '}{dueText}
-          </Text>
+          {!completed ? (
+            <Text size="sm" c={overdue ? 'red.6' : 'dimmed'}>
+              {overdue ? 'Overdue • ' : 'Due • '}{dueText}
+            </Text>
+          ) : (
+            <Group gap={6}>
+              <Text size="sm" c="dimmed">
+                Completed{completedAt ? ' • ' : ''}
+              </Text>
+              {completedAt ? (
+                <Tooltip label={new Date(completedAt).toISOString()} withArrow>
+                  <Text size="sm" c="dimmed">{dayjs(completedAt).format('MMM D, h:mm A')}</Text>
+                </Tooltip>
+              ) : null}
+            </Group>
+          )}
         </Stack>
         <Menu withinPortal position="bottom-end" shadow="sm">
           <Menu.Target>
@@ -88,4 +103,3 @@ export default function AssignmentCard({
     </Card>
   );
 }
-

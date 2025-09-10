@@ -16,13 +16,17 @@ export type UpcomingPageProps = {
 export default function UpcomingPage({ onEdit, onDelete, onSnooze1h }: UpcomingPageProps) {
   const [filter, setFilter] = useState<'all' | 'overdue' | 'due-soon' | 'done'>('all');
   const selectUpcoming = useAppStore((s) => s.selectUpcoming);
+  const selectDone = useAppStore((s) => s.selectDone);
   const lastChangeToken = useAppStore((s) => s.lastChangeToken);
   const classesFromStore = useAppStore((s) => s.classes);
   const appToggleDone = useAppStore((s) => s.toggleDone);
   const appUpdateAssignment = useAppStore((s) => s.updateAssignment);
   const appDeleteAssignment = useAppStore((s) => s.deleteAssignment);
 
-  const items = useMemo(() => selectUpcoming(new Date(), { filter }), [filter, lastChangeToken, selectUpcoming]);
+  const items = useMemo(() => {
+    if (filter === 'done') return selectDone();
+    return selectUpcoming(new Date(), { filter });
+  }, [filter, lastChangeToken, selectUpcoming, selectDone]);
   const groups = useMemo(() => groupByDate(items), [items]);
 
   return (
@@ -49,6 +53,7 @@ export default function UpcomingPage({ onEdit, onDelete, onSnooze1h }: UpcomingP
               title={a.title}
               dueAt={a.dueAt}
               completed={a.completed}
+              completedAt={a.completedAt}
               classLabel={(classesFromStore.find((c) => c.id === a.classId)?.name) ?? '—'}
               classColor={(classesFromStore.find((c) => c.id === a.classId)?.color) ?? 'gray'}
               onToggleComplete={async (id) => {

@@ -77,6 +77,7 @@ This repo follows Speckit (spec → plan → tasks → implementation):
   - QuickFilters (`src/ui/QuickFilters.tsx`): All / Overdue / Due today / Done.
   - EmojiButton (`src/ui/EmojiButton.tsx`): Visual emoji picker with search, categories, and accessibility support.
   - OnboardingHints (`src/ui/OnboardingHints.tsx`): Step-by-step guided tour with focus management.
+  - Settings (`src/pages/Settings.tsx`): Centralized controls for notifications, appearance, data, onboarding, and about.
 - Forms & flows:
   - AssignmentForm (`src/ui/AssignmentForm.tsx`): Modal (desktop) / Drawer (mobile), ≤5 inputs, validation, uses existing store actions.
   - ClassForm (`src/ui/modals/ClassForm.tsx`): Enhanced class creation with emoji picker integration.

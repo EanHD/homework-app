@@ -62,6 +62,7 @@ export default function TodayView({ onAdd, onEdit, onArchive }: TodayViewProps) 
                 title={assignment.title}
                 dueAt={assignment.dueAt}
                 completed={assignment.completed}
+                completedAt={assignment.completedAt}
                 classLabel={classInfo?.name ?? 'Unknown'}
                 classColor={classInfo?.color ?? 'gray'}
                 onToggleComplete={handleToggleComplete}
@@ -80,4 +81,3 @@ export default function TodayView({ onAdd, onEdit, onArchive }: TodayViewProps) 
     </Stack>
   );
 }
-

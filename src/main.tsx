@@ -1,22 +1,44 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, createTheme, rem } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import '@mantine/core/styles.css';
 import './a11y.css';
 import App from './App';
 import uiTheme from '@/ui/theme';
+import { useSettingsStore } from '@/store/settings';
 import './sw-registration';
 import { createStore } from '@/store/store';
 import { createScheduler } from '@/store/scheduler';
 import { bootCleanup } from '@/store/repository';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <MantineProvider theme={uiTheme} defaultColorScheme="light">
+function ThemedApp() {
+  const colorScheme = useSettingsStore((s) => s.theme);
+  const fontScale = useSettingsStore((s) => s.fontScale);
+  const scale = fontScale === 'large' ? 1.125 : 1;
+
+  const theme = createTheme({
+    ...uiTheme,
+    fontSizes: {
+      xs: rem(12 * scale),
+      sm: rem(14 * scale),
+      md: rem(16 * scale),
+      lg: rem(18 * scale),
+      xl: rem(20 * scale),
+    },
+  });
+
+  return (
+    <MantineProvider theme={theme} defaultColorScheme={colorScheme}>
       <Notifications position="top-right" />
       <App />
     </MantineProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ThemedApp />
   </React.StrictMode>
 );
 

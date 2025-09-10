@@ -22,6 +22,27 @@ export async function toggleDone(id: ID): Promise<State> {
   return next;
 }
 
+// Migration: ensure completedAt is set for legacy done items
+export async function migrateCompletedAt(): Promise<State | null> {
+  const state = (await loadState()) as State | null;
+  if (!state) return null;
+  let changed = false;
+  const nowIso = new Date().toISOString();
+  const nextAssignments = state.assignments.map((a) => {
+    if (a.completed && !a.completedAt) {
+      changed = true;
+      return { ...a, completedAt: nowIso } as Assignment;
+    }
+    return a;
+  });
+  if (changed) {
+    const next: State = { ...state, assignments: nextAssignments } as State;
+    await saveState(next);
+    return next;
+  }
+  return state;
+}
+
 export async function archiveCompletedOlderThan(days = 90): Promise<State | null> {
   const state = (await loadState()) as State | null;
   if (!state) return null;
@@ -59,6 +80,7 @@ async function saveAndReturn(updater: (s: State) => State): Promise<State> {
 // Boot-time cleanup helper
 export async function bootCleanup(): Promise<void> {
   try {
+    await migrateCompletedAt();
     await archiveCompletedOlderThan(90);
   } catch {
     // ignore cleanup errors
@@ -146,4 +168,3 @@ export async function importData(payload: { version?: string; classes?: any[]; a
     };
   }
 }
-

@@ -21,3 +21,15 @@ class ResizeObserverMock {
 }
 // @ts-ignore
 global.ResizeObserver = ResizeObserverMock;
+
+// jsdom: URL.createObjectURL polyfill for tests that trigger downloads
+// @ts-ignore
+if (typeof URL.createObjectURL !== 'function') {
+  // @ts-ignore
+  URL.createObjectURL = () => 'blob:mock';
+}
+// @ts-ignore
+if (typeof URL.revokeObjectURL !== 'function') {
+  // @ts-ignore
+  URL.revokeObjectURL = () => {};
+}

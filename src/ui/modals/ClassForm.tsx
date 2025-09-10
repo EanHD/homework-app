@@ -44,12 +44,30 @@ export default function ClassForm({ opened, onClose, initial, onSubmit }: ClassF
             error={error} 
             required 
           />
-          
+
           <Box>
             <Text component="label" size="sm" fw={500} mb={4}>
               Emoji
             </Text>
-            <Group gap="xs" align="center">
+            <Group gap="sm" align="center" wrap="nowrap">
+              {/* Preview container: fixed square, centered, no clipping */}
+              <Box
+                aria-label="Emoji preview"
+                style={{
+                  width: 44,
+                  height: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'visible',
+                  lineHeight: 1,
+                  borderRadius: 8,
+                }}
+              >
+                <Text component="span" style={{ fontSize: 30, lineHeight: 1 }}>{emoji}</Text>
+              </Box>
+
+              {/* Control to change emoji */}
               <EmojiButton
                 value={emoji}
                 onChange={setEmoji}
@@ -57,6 +75,7 @@ export default function ClassForm({ opened, onClose, initial, onSubmit }: ClassF
                 ariaLabel="Select class emoji"
                 withLabel
               />
+
               <Text size="sm" c="dimmed">
                 Choose an emoji for this class
               </Text>
@@ -74,4 +93,3 @@ export default function ClassForm({ opened, onClose, initial, onSubmit }: ClassF
     </Modal>
   );
 }
-

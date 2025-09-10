@@ -94,6 +94,7 @@ export default function UpcomingView({ onAdd, onEdit, onArchive }: UpcomingViewP
                     title={assignment.title}
                     dueAt={assignment.dueAt}
                     completed={assignment.completed}
+                    completedAt={assignment.completedAt}
                     classLabel={classInfo?.name ?? 'Unknown'}
                     classColor={classInfo?.color ?? (isOverdue ? 'red' : 'gray')}
                     onToggleComplete={handleToggleComplete}
@@ -114,4 +115,3 @@ export default function UpcomingView({ onAdd, onEdit, onArchive }: UpcomingViewP
     </Stack>
   );
 }
-

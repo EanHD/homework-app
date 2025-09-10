@@ -9,6 +9,7 @@ import {
   Divider,
   NumberInput,
   ColorInput,
+  SimpleGrid,
   Text,
   Modal,
   Drawer,
@@ -19,6 +20,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import type { Assignment, Class, ID, StoreActions } from '@/store/types';
 import { useAppStore } from '@/store/app';
 import EmojiButton from '@/ui/EmojiButton';
+import ColorField from '@/ui/ColorField';
 
 export type AssignmentFormValues = {
   title: string;
@@ -145,8 +147,13 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
     if (values.classMode === 'new') {
       const created = await (actions?.addClass ?? addClassStore)({
         name: values.newClassName.trim(),
-        emoji: values.newClassEmoji.trim(),
-        color: values.newClassColor.startsWith('#') ? values.newClassColor : `#${values.newClassColor}`,
+        emoji: (values.newClassEmoji.trim() || '📘'),
+        color:
+          /^#?[0-9a-fA-F]{6}$/.test(values.newClassColor)
+            ? values.newClassColor.startsWith('#')
+              ? values.newClassColor
+              : `#${values.newClassColor}`
+            : '#1E88E5',
       });
       classId = (created as any).id as ID;
     }
@@ -205,30 +212,34 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
 
       {values.classMode === 'new' && (
         <Stack gap="sm">
-          <Group align="flex-end" grow>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
               label="Name"
               placeholder="e.g., History"
               value={values.newClassName}
               onChange={(e) => setValues((v) => ({ ...v, newClassName: e.currentTarget.value }))}
               error={errors.newClassName}
+              size="sm"
             />
-            <TextInput
-              label="Emoji"
-              placeholder="e.g., 📚"
-              maxLength={2}
-              value={values.newClassEmoji}
-              onChange={(e) => setValues((v) => ({ ...v, newClassEmoji: e.currentTarget.value }))}
-              error={errors.newClassEmoji}
-            />
-          </Group>
-          <ColorInput
-            label="Color"
-            format="hex"
-            value={values.newClassColor}
-            onChange={(val) => setValues((v) => ({ ...v, newClassColor: val }))}
-            error={errors.newClassColor}
-          />
+            <Group align="flex-end" gap="xs">
+              <TextInput
+                label="Emoji"
+                placeholder="e.g., 📘"
+                maxLength={2}
+                value={values.newClassEmoji}
+                onChange={(e) => setValues((v) => ({ ...v, newClassEmoji: e.currentTarget.value }))}
+                error={errors.newClassEmoji}
+                size="sm"
+                style={{ flex: 1 }}
+              />
+              <EmojiButton value={values.newClassEmoji} onChange={(emoji) => setValues((v) => ({ ...v, newClassEmoji: emoji }))} size="sm" ariaLabel="Choose emoji" />
+            </Group>
+          </SimpleGrid>
+          <Box>
+            <ColorField label="Color" value={values.newClassColor} onChange={(hex) => setValues((v) => ({ ...v, newClassColor: hex }))} withInput />
+            <Text size="xs" c="dimmed" mt={4}>Pick a color or enter a hex.</Text>
+          </Box>
+          <Text size="xs" c="dimmed">Choose an emoji for this class</Text>
         </Stack>
       )}
 
