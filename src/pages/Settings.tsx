@@ -175,7 +175,11 @@ export default function SettingsPage() {
                   const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(publicKey) as unknown as BufferSource });
                   const json = sub.toJSON() as any;
                   setSubEndpoint(json?.endpoint ?? null);
-                  await postSubscribe({ userId: getOrCreateUserId(), endpoint: json.endpoint, keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth } });
+                  const res = await postSubscribe({ userId: getOrCreateUserId(), endpoint: json.endpoint, keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth } });
+                  if (!res || !res.ok) {
+                    notifications.show({ message: 'Subscribe failed', color: 'red' });
+                    return;
+                  }
                   notifications.show({ message: 'Push notifications enabled', color: 'green' });
                 } catch (e) {
                   notifications.show({ message: 'Failed to enable push', color: 'red' });
@@ -213,8 +217,12 @@ export default function SettingsPage() {
                   const now = Date.now() + 60_000;
                   const id = 'test-notification';
                   const { postSchedule } = await import('@/services/pushApi');
-                  await postSchedule({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: '/homework-app/#/main' });
-                  notifications.show({ message: 'Test notification scheduled for 60s', color: 'blue' });
+                  const res = await postSchedule({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: '/homework-app/#/main' });
+                  if (!res || !res.ok) {
+                    notifications.show({ message: 'Failed to schedule test', color: 'red' });
+                  } else {
+                    notifications.show({ message: 'Test notification scheduled for 60s', color: 'blue' });
+                  }
                 } catch {
                   notifications.show({ message: 'Failed to schedule test', color: 'red' });
                 }

@@ -45,7 +45,15 @@ Deno.serve(async (req) => {
       return cors(new Response(JSON.stringify({ ok: true, action: 'deleted' }), { status: 200 }));
     }
 
-    // Upsert new schedule row (dedup on user_id+assignment_id+send_at)
+    // Remove any pending unsent schedules for this assignment to avoid duplicates
+    await supabase
+      .from('scheduled_notifications')
+      .delete()
+      .eq('user_id', body.userId)
+      .eq('assignment_id', body.assignmentId)
+      .is('sent_at', null);
+
+    // Insert new schedule row
     const row = {
       user_id: body.userId,
       assignment_id: body.assignmentId,
@@ -54,12 +62,11 @@ Deno.serve(async (req) => {
       send_at: body.sendAt,
       sent_at: null as string | null,
     } as any;
-    // Ensure `url` column exists or ignore if not present
     const { error } = await supabase
       .from('scheduled_notifications')
-      .upsert(row, { onConflict: 'user_id,assignment_id,send_at' });
+      .insert(row);
     if (error) return cors(new Response(error.message, { status: 500 }));
-    return cors(new Response(JSON.stringify({ ok: true, action: 'upserted' }), { status: 200 }));
+    return cors(new Response(JSON.stringify({ ok: true, action: 'inserted' }), { status: 200 }));
   } catch (e) {
     return cors(new Response(`Error: ${e instanceof Error ? e.message : 'unknown'}`, { status: 500 }));
   }
