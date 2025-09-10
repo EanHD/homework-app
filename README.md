@@ -118,6 +118,24 @@ This repo follows Speckit (spec → plan → tasks → implementation):
 - **Export**: Download all data as structured JSON with version metadata
 - **Import**: Upload and merge data with duplicate detection and validation
 - **Backup**: Preserve user data with integrity checks and error handling
+
+## Push Notifications
+- Backend (Supabase):
+  - Set secrets: `VAPID_PUBLIC`, `VAPID_PRIVATE`, `VAPID_SUBJECT`, `PROJECT_URL`, `SERVICE_ROLE_KEY`.
+  - Create tables and indexes (see `specs/006-push-notifications-via/data-model.md`).
+  - Deploy Edge Functions:
+    - `functions/subscribe/index.ts`
+    - `functions/schedule/index.ts`
+    - `functions/send-notifications/index.ts`
+  - Schedule cron: invoke `send-notifications` every minute.
+- Frontend:
+  - `.env`: `VITE_FUNCTIONS_BASE=https://<PROJECT>.functions.supabase.co` and `VITE_VAPID_PUBLIC=<public key>`.
+  - In Settings: enable push, then “Send test notification”.
+  - Service Worker handles `push` and deep-links on `notificationclick`.
+
+Limitations:
+- iOS ≥16.4 supports Web Push only when installed to Home Screen; desktop Chromium works broadly.
+- Delivery during quiet hours is deferred until quiet hours end.
 - **Migration**: Forward-compatible data format with version tracking
 - **Conflict Resolution**: Smart merging prevents data loss during imports
 

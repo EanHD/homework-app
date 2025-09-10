@@ -101,6 +101,23 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
+    // Schedule push notification only when a reminder is explicitly set
+    try {
+      const { useSettingsStore } = await import('./settings');
+      const settings = useSettingsStore.getState();
+      const enabled = settings.notificationsEnabled;
+      const offsetMin = a.remindAtMinutes as number | null | undefined;
+      if (enabled && typeof offsetMin === 'number' && offsetMin >= 0) {
+        const sendAtMs = new Date(a.dueAt).getTime() - offsetMin * 60_000;
+        const sendAt = new Date(Math.max(sendAtMs, Date.now())).toISOString();
+        const { postSchedule } = await import('@/services/pushApi');
+        const { getOrCreateUserId } = await import('@/utils/userId');
+        const url = `/homework-app/#/assignment/${a.id}`;
+        await postSchedule({ userId: getOrCreateUserId(), assignmentId: a.id, title: a.title, body: '', sendAt, url });
+      }
+    } catch {
+      // ignore scheduling errors
+    }
     return a;
   },
 
@@ -109,6 +126,27 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
+    // Reschedule if reminder explicitly set, otherwise cancel
+    try {
+      const updated = nextAssignments.find((x) => x.id === input.id);
+      if (!updated) return;
+      const { useSettingsStore } = await import('./settings');
+      const settings = useSettingsStore.getState();
+      const enabled = settings.notificationsEnabled;
+      const offsetMin = updated.remindAtMinutes as number | null | undefined;
+      const { postSchedule } = await import('@/services/pushApi');
+      const { getOrCreateUserId } = await import('@/utils/userId');
+      if (enabled && typeof offsetMin === 'number' && offsetMin >= 0) {
+        const sendAtMs = new Date(updated.dueAt).getTime() - offsetMin * 60_000;
+        const sendAt = new Date(Math.max(sendAtMs, Date.now())).toISOString();
+        const url = `/homework-app/#/assignment/${updated.id}`;
+        await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, title: updated.title, body: '', sendAt, url });
+      } else {
+        await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, cancel: true });
+      }
+    } catch {
+      // ignore scheduling errors
+    }
   },
 
   async deleteAssignment(id) {
@@ -116,6 +154,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
+    // Cancel any scheduled notifications for this assignment
+    try {
+      const { postSchedule } = await import('@/services/pushApi');
+      const { getOrCreateUserId } = await import('@/utils/userId');
+      await postSchedule({ userId: getOrCreateUserId(), assignmentId: id, cancel: true });
+    } catch {
+      // ignore scheduling errors
+    }
   },
 
   async toggleDone(id) {

@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react';
-import { Button, Card, Group, Select, Stack, Switch, Text, Title, SegmentedControl, Divider, Alert } from '@mantine/core';
+import { Button, Card, Group, Select, Stack, Switch, Text, Title, SegmentedControl, Divider, Alert, Badge } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconDownload, IconUpload, IconTrash, IconPlayerPlay, IconRosetteDiscountCheck } from '@tabler/icons-react';
 import { useSettingsStore } from '@/store/settings';
 import { useAppStore } from '@/store/app';
+import { base64UrlToUint8Array } from '@/utils/webpush';
+import { getOrCreateUserId } from '@/utils/userId';
+import { postSubscribe, deleteSubscription } from '@/services/pushApi';
 import pkg from '../../package.json';
 import { saveState } from '@/store/persistence';
 import type { State, Class, Assignment } from '@/store/types';
@@ -44,6 +47,9 @@ export default function SettingsPage() {
   // File import ref
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [importing, setImporting] = useState(false);
+  const [perm, setPerm] = useState<NotificationPermission>(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+  const [subEndpoint, setSubEndpoint] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const onExport = async () => {
     const data = await exportData();
@@ -142,6 +148,79 @@ export default function SettingsPage() {
             label="Enable notifications"
             aria-label="Enable notifications"
           />
+
+          <Group gap="sm">
+            <Badge color={perm === 'granted' ? 'green' : perm === 'denied' ? 'red' : 'gray'}>
+              Permission: {perm}
+            </Badge>
+            {subEndpoint && <Badge color="blue">Subscribed</Badge>}
+            {!('Notification' in window) && <Badge color="gray">Not supported</Badge>}
+          </Group>
+
+          <Group gap="md" wrap="wrap">
+            <Button
+              onClick={async () => {
+                if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+                setBusy(true);
+                try {
+                  const reg = (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.register('/homework-app/sw.js', { scope: '/homework-app/' }));
+                  let permission: NotificationPermission = Notification.permission;
+                  if (permission === 'default') permission = await Notification.requestPermission();
+                  setPerm(permission);
+                  if (permission !== 'granted') return;
+                  const publicKey = (import.meta as any).env?.VITE_VAPID_PUBLIC as string | undefined;
+                  if (!publicKey) return;
+                  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(publicKey) as unknown as BufferSource });
+                  const json = sub.toJSON() as any;
+                  setSubEndpoint(json?.endpoint ?? null);
+                  await postSubscribe({ userId: getOrCreateUserId(), endpoint: json.endpoint, keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth } });
+                  notifications.show({ message: 'Push notifications enabled', color: 'green' });
+                } catch (e) {
+                  notifications.show({ message: 'Failed to enable push', color: 'red' });
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              loading={busy}
+            >
+              Enable push notifications
+            </Button>
+            <Button
+              variant="default"
+              onClick={async () => {
+                try {
+                  const reg = await navigator.serviceWorker.getRegistration();
+                  const sub = await reg?.pushManager.getSubscription();
+                  const endpoint = sub?.endpoint;
+                  await sub?.unsubscribe();
+                  setSubEndpoint(null);
+                  if (endpoint) await deleteSubscription({ userId: getOrCreateUserId(), endpoint });
+                  notifications.show({ message: 'Unsubscribed', color: 'blue' });
+                } catch {
+                  notifications.show({ message: 'Failed to unsubscribe', color: 'red' });
+                }
+              }}
+            >
+              Unsubscribe
+            </Button>
+            <Button
+              leftSection={<IconPlayerPlay size={16} />}
+              variant="default"
+              onClick={async () => {
+                try {
+                  const now = Date.now() + 60_000;
+                  const id = 'test-notification';
+                  const { postSchedule } = await import('@/services/pushApi');
+                  await postSchedule({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: '/homework-app/#/main' });
+                  notifications.show({ message: 'Test notification scheduled for 60s', color: 'blue' });
+                } catch {
+                  notifications.show({ message: 'Failed to schedule test', color: 'red' });
+                }
+              }}
+            >
+              Send test notification
+            </Button>
+          </Group>
 
           <Group wrap="wrap" gap="md">
             <Select
