@@ -1,8 +1,10 @@
-const BASE = (import.meta as any).env?.VITE_FUNCTIONS_BASE as string | undefined;
+import { getRuntimeConfig } from '@/config';
 
 async function api(path: string, init: RequestInit & { json?: any } = {}) {
-  if (!BASE) throw new Error('VITE_FUNCTIONS_BASE not set');
-  const url = `${BASE}${path}`;
+  const cfg = await getRuntimeConfig();
+  const base = cfg.functionsBase;
+  if (!base) throw new Error('functionsBase not configured');
+  const url = `${base}${path}`;
   const { json, headers, ...rest } = init;
   const res = await fetch(url, {
     method: 'POST',
@@ -23,8 +25,10 @@ export async function postSubscribe(payload: { userId: string; endpoint: string;
 
 export async function deleteSubscription(payload: { userId: string; endpoint: string }) {
   try {
-    if (!BASE) return;
-    const res = await fetch(`${BASE}/subscribe`, {
+    const cfg = await getRuntimeConfig();
+    const base = cfg.functionsBase;
+    if (!base) throw new Error('functionsBase not configured');
+    const res = await fetch(`${base}/subscribe`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -57,4 +61,3 @@ export function getSubscriptionJSON(sub: PushSubscription | null): PushSubscript
     return null;
   }
 }
-

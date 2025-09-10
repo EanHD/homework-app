@@ -6,6 +6,7 @@ import { IconAlertCircle, IconDownload, IconUpload, IconTrash, IconPlayerPlay, I
 import { useSettingsStore } from '@/store/settings';
 import { useAppStore } from '@/store/app';
 import { base64UrlToUint8Array } from '@/utils/webpush';
+import { getRuntimeConfig } from '@/config';
 import { getOrCreateUserId } from '@/utils/userId';
 import { postSubscribe, deleteSubscription } from '@/services/pushApi';
 import pkg from '../../package.json';
@@ -168,8 +169,9 @@ export default function SettingsPage() {
                   if (permission === 'default') permission = await Notification.requestPermission();
                   setPerm(permission);
                   if (permission !== 'granted') return;
-                  const publicKey = (import.meta as any).env?.VITE_VAPID_PUBLIC as string | undefined;
-                  if (!publicKey) return;
+                  const cfg = await getRuntimeConfig();
+                  const publicKey = cfg.vapidPublic as string | undefined;
+                  if (!publicKey) { notifications.show({ message: 'Missing VAPID public key configuration', color: 'red' }); return; }
                   const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(publicKey) as unknown as BufferSource });
                   const json = sub.toJSON() as any;
                   setSubEndpoint(json?.endpoint ?? null);
