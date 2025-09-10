@@ -184,7 +184,7 @@ export default function SettingsPage() {
           </Group>
 
           <Alert icon={<IconAlertCircle size={16} />} variant="light" color="gray">
-            Quiet hours suppress reminders that would occur within the selected window, including across midnight.
+            Reminders require the app to be open due to platform limitations. Quiet hours suppress reminders that would occur within the selected window, including across midnight.
           </Alert>
         </Stack>
       </Card>

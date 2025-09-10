@@ -58,13 +58,13 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
               {nowChip}
             </Badge>
           </Group>
-          <Button leftSection={<IconPlus size={16} />} onClick={onAdd} visibleFrom="md">
+          <Button leftSection={<IconPlus size={16} />} onClick={onAdd} visibleFrom="md" data-onboarding="add-button">
             Add
           </Button>
         </Group>
       </MantineAppShell.Header>
 
-      <MantineAppShell.Navbar component="nav" aria-label="Primary" p="sm">
+      <MantineAppShell.Navbar component="nav" aria-label="Primary" p="sm" data-onboarding="navigation">
         <ScrollArea type="never" style={{ height: '100%' }}>
           <Stack gap="xs">
             {navItems.map((item) => (

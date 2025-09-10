@@ -11,6 +11,7 @@ import AssignmentForm from '@/ui/AssignmentForm';
 import { useAppStore } from '@/store/app';
 import { Button } from '@mantine/core';
 import dayjs from 'dayjs';
+import OnboardingHints from '@/ui/OnboardingHints';
 
 export default function App() {
   const store = useMemo(() => createStore(), []);
@@ -107,6 +108,24 @@ export default function App() {
           {renderPage()}
         </div>
       </AppShell>
+
+      {/* Onboarding tour overlay; enabled unless marked seen in store */}
+      <OnboardingHints
+        enabled
+        onAddSampleData={async () => {
+          const addClass = useAppStore.getState().addClass;
+          const addAssignment = useAppStore.getState().addAssignment;
+          const math = await addClass({ name: 'Math', emoji: '📐', color: '#4CAF50' });
+          const eng = await addClass({ name: 'English', emoji: '📚', color: '#1E88E5' });
+          const now = new Date();
+          const in2h = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
+          const tomorrow9 = new Date();
+          tomorrow9.setDate(tomorrow9.getDate() + 1);
+          tomorrow9.setHours(9, 0, 0, 0);
+          await addAssignment({ title: 'Finish problem set', classId: math.id, dueAt: in2h, notes: null, remindAtMinutes: 30, completed: false });
+          await addAssignment({ title: 'Read chapter 3', classId: eng.id, dueAt: tomorrow9.toISOString(), notes: null, remindAtMinutes: 60, completed: false });
+        }}
+      />
       <AssignmentForm
         opened={formOpen}
         onClose={() => {

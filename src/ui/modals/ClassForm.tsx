@@ -71,9 +71,9 @@ export default function ClassForm({ opened, onClose, initial, onSubmit }: ClassF
               <EmojiButton
                 value={emoji}
                 onChange={setEmoji}
-                size="lg"
+                size="md"
                 ariaLabel="Select class emoji"
-                withLabel
+                forceSmileyTrigger
               />
 
               <Text size="sm" c="dimmed">

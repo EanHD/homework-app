@@ -270,6 +270,7 @@ export default function AssignmentForm({ opened, onClose, actions, classes, edit
           <EmojiButton
             size="sm"
             ariaLabel="Add emoji to notes"
+            forceSmileyTrigger
             onChange={(emoji) => {
               const textarea = notesRef.current;
               if (textarea) {

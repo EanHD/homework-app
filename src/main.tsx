@@ -29,7 +29,7 @@ function ThemedApp() {
   });
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme={colorScheme}>
+    <MantineProvider theme={theme} forceColorScheme={colorScheme}>
       <Notifications position="top-right" />
       <App />
     </MantineProvider>

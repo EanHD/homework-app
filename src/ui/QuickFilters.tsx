@@ -10,6 +10,7 @@ export type QuickFiltersProps = {
 export default function QuickFilters({ value, onChange }: QuickFiltersProps) {
   return (
     <SegmentedControl
+      data-onboarding="filters"
       value={value}
       onChange={(v) => onChange(v as FilterValue)}
       data={[
@@ -21,4 +22,3 @@ export default function QuickFilters({ value, onChange }: QuickFiltersProps) {
     />
   );
 }
-
