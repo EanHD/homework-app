@@ -14,7 +14,8 @@
     "test:push:trigger": "tsx scripts/test-push.ts trigger",
     "test:push:config": "tsx scripts/test-push.ts config",
     "test:push:js": "node scripts/test-push.js",
-    "test:push:js:config": "node scripts/test-push.js config"
+    "test:push:js:config": "node scripts/test-push.js config",
+    "validate:https": "node scripts/validate-https.js"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
