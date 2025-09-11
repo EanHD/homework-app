@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run --reporter=basic --pool=threads --maxWorkers=1",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:push": "tsx scripts/test-push.ts",
     "test:push:subscriptions": "tsx scripts/test-push.ts subscriptions",
     "test:push:send": "tsx scripts/test-push.ts send",
@@ -15,7 +17,8 @@
     "test:push:config": "tsx scripts/test-push.ts config",
     "test:push:js": "node scripts/test-push.js",
     "test:push:js:config": "node scripts/test-push.js config",
-    "validate:https": "node scripts/validate-https.js"
+    "validate:https": "node scripts/validate-https.js",
+    "postinstall": "command -v playwright >/dev/null && playwright install --with-deps || true"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -24,6 +27,7 @@
     "@mantine/dates": "^7.14.2",
     "@mantine/hooks": "^7.14.2",
     "@mantine/notifications": "^7.14.2",
+    "@playwright/test": "^1.55.0",
     "@supabase/supabase-js": "^2.57.4",
     "@tabler/icons-react": "^3.19.0",
     "dayjs": "^1.11.11",
@@ -35,6 +39,7 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
     "@types/node": "^20.11.25",

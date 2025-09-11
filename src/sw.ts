@@ -2,12 +2,12 @@
 
 /// <reference lib="webworker" />
 
-declare const self: ServiceWorkerGlobalScope;
+declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 declare const __BUILD_ID__: string;
 
 const CACHE_NAME = `hb-app-shell-${__BUILD_ID__}`;
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil((async () => {
     const base = new URL(self.registration.scope).pathname; // e.g., '/homework-app/' or '/'
     const shell = [base, base + 'index.html', base + 'manifest.webmanifest', base + 'icon.svg', base + 'maskable.svg'];
@@ -17,7 +17,7 @@ self.addEventListener('install', (event) => {
   })());
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', (event: ExtendableEvent) => {
   event.waitUntil(
     caches
       .keys()
@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
 
 // Cache strategy: navigation requests → network-first with offline fallback
 // Static assets (same-origin) → stale-while-revalidate
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', (event: FetchEvent) => {
   const req = event.request;
   const url = new URL(req.url);
   if (req.method !== 'GET') return;
@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Handle incoming Web Push messages
-self.addEventListener('push', (event) => {
+self.addEventListener('push', (event: PushEvent) => {
   try {
     const data = event.data && event.data.json ? event.data.json() : {};
     const title = data.title || 'Homework Buddy';
@@ -79,10 +79,10 @@ self.addEventListener('push', (event) => {
   }
 });
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close();
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients: readonly WindowClient[]) => {
       const data = (event.notification && event.notification.data) || {};
       const base = new URL(self.registration.scope).pathname || '/';
       const url = (data && data.url) || (base + '#/main');
@@ -95,7 +95,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Handle messages from page (for update coordination)
-self.addEventListener('message', (event) => {
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }

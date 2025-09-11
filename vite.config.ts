@@ -6,11 +6,12 @@ import { execSync } from 'node:child_process';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Generate build ID from git commit or fallback to timestamp
+  // Use stable ID in development to prevent service worker refresh loops
   let buildId: string;
   try {
-    buildId = execSync('git rev-parse --short HEAD').toString().trim();
+    buildId = mode === 'development' ? 'dev-stable' : execSync('git rev-parse --short HEAD').toString().trim();
   } catch {
-    buildId = Date.now().toString();
+    buildId = mode === 'development' ? 'dev-stable' : Date.now().toString();
   }
 
   return {
