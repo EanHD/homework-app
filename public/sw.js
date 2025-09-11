@@ -78,7 +78,8 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       const data = (event.notification && event.notification.data) || {};
-      const url = (data && data.url) || '/homework-app/#/main';
+      const base = new URL(self.registration.scope).pathname || '/';
+      const url = (data && data.url) || (base + '#/main');
       for (const c of clients) {
         if ('focus' in c) { c.navigate(url); return c.focus(); }
       }
