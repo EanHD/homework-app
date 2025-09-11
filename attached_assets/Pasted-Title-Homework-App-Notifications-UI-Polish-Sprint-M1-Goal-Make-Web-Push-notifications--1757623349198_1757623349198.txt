@@ -1,0 +1,62 @@
+Title: Homework App – Notifications + UI Polish (Sprint M1)
+
+Goal:
+- Make Web Push notifications reliable in dev and production.
+- Fix visual/layout bugs (header too tall, bottom bar overlap, list clipping at bottom, safe-area on mobile).
+- Ship a repeatable smoke test and short docs so I can validate in <5 minutes.
+
+Context:
+- Repo: homework-app
+- Agent: Replit Agent 3
+- Please first read `.github/` SpecKit docs in this repo to understand conventions, PR etiquette, and /-commands.
+- Notifications stack suspected: Service Worker + Push subscription + Supabase Functions (e.g., `subscribe`, maybe `schedule`/`send`), CORS module in `supabase/functions/_shared/cors.ts`.
+
+Non-Goals:
+- Full redesign.
+- Data model changes beyond storing push subscriptions and required metadata.
+
+Constraints:
+- Keep diffs small and reviewable. No big refactors.
+- Maintain current design language; prefer CSS/utility fixes.
+- Guard mobile browsers (iOS Safari, Android Chrome) and HTTPS-only requirements for push.
+
+Deliverables (Acceptance Criteria):
+1) Notifications work E2E:
+   - Dev: `npm run dev` → register SW → subscribe → run a test script → push arrives.
+   - Prod: Deployed site → same flow.
+   - Provide `scripts/test-push.[ts|js]` and a `curl` sample that succeeds.
+   - Document VAPID/public key setup and where ENV is injected.
+
+2) Supabase integration verified:
+   - List active functions (names + paths).
+   - Show `deno.json` flags for each (verify_jwt on/off) and why.
+   - Confirm CORS origins; provide working preflight `curl -X OPTIONS` example.
+   - If cron/schedule exists or is needed for a test ping, document it or add it clearly.
+
+3) UI bugs fixed (at minimum):
+   - Header height no longer obstructive.
+   - Bottom bar no longer overlaps content; safe-area insets handled.
+   - List no longer clipped at bottom; keyboard/focus on mobile doesn’t hide content.
+   - Provide before/after screenshots or devtools gifs.
+
+4) Tests & CI:
+   - Add Playwright or similar e2e for “subscribe → receive test push” (can be mocked if real push flaky in CI).
+   - Add a layout guard test (simple viewport screenshot compare or DOM assertions).
+   - Ensure CI runs them (reuse SpecKit CI if present).
+
+5) Docs:
+   - `NOTIFICATIONS_REPORT.md`: architecture map, failure points found, exact fixes, commands to run.
+   - `UI_REPORT.md`: bugs found, minimal diffs, code snippets, screenshots.
+   - A 1-page “SMOKE_TEST.md” with copy-paste commands for dev and prod validation.
+
+Risks to watch:
+- SW scope/path and cache busting.
+- Permission timing; unsupported browser paths.
+- CORS and mixed-content/HTTP pitfalls.
+- RLS blocking subscription writes in Supabase.
+- Mobile viewport units (`100vh`) causing clipping; missing `env(safe-area-inset-*)`.
+
+Definition of Done:
+- All acceptance checks pass locally.
+- PR(s) open with screenshots/logs.
+- I can run SMOKE_TEST.md end-to-end without you.
