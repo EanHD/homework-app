@@ -1,5 +1,5 @@
 /* Simple app-shell service worker with offline support and basic notification click handling */
-const CACHE_NAME = 'hb-app-shell-v2';
+const CACHE_NAME = 'hb-app-shell-v3';
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -60,11 +60,12 @@ self.addEventListener('push', (event) => {
   try {
     const data = event.data && event.data.json ? event.data.json() : {};
     const title = data.title || 'Homework Buddy';
+    const base = new URL(self.registration.scope).pathname; // '/homework-app/' or '/'
     const options = {
       body: data.body,
       data,
-      icon: '/homework-app/icons/icon-192.png',
-      badge: '/homework-app/icons/icon-192.png',
+      icon: base + 'icon.svg',
+      badge: base + 'maskable.svg',
     };
     event.waitUntil(self.registration.showNotification(title, options));
   } catch {

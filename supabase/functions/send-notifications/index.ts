@@ -4,6 +4,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as webpush from "https://deno.land/x/webpush@v1.2.0/mod.ts";
+import { corsify, preflight } from "../_shared/cors.ts";
 
 type SchedRow = {
   id: string;
@@ -16,14 +17,16 @@ type SchedRow = {
   url?: string | null;
 };
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  const pf = preflight(req);
+  if (pf) return corsify(req, pf);
   const PROJECT_URL = Deno.env.get('PROJECT_URL');
   const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY');
   const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC');
   const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE');
   const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') || 'mailto:you@example.com';
   if (!PROJECT_URL || !SERVICE_ROLE_KEY || !VAPID_PUBLIC || !VAPID_PRIVATE) {
-    return new Response('Missing env', { status: 500 });
+    return corsify(req, new Response('Missing env', { status: 500 }));
   }
   const supabase = createClient(PROJECT_URL, SERVICE_ROLE_KEY);
 
@@ -36,7 +39,7 @@ Deno.serve(async (_req) => {
       .is('sent_at', null)
       .lte('send_at', new Date().toISOString())
       .limit(500);
-    if (error) return new Response(error.message, { status: 500 });
+    if (error) return corsify(req, new Response(error.message, { status: 500 }));
 
     const processed = (rows || []).length;
     let delivered = 0;
@@ -87,9 +90,8 @@ Deno.serve(async (_req) => {
 
     const report = { processed, successes: delivered, pruned: removed, errors };
     try { console.log(`[send-notifications] processed=${processed} successes=${delivered} pruned=${removed} errors=${errors}`); } catch {}
-    return new Response(JSON.stringify(report), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return corsify(req, new Response(JSON.stringify(report), { status: 200, headers: { 'Content-Type': 'application/json' } }));
   } catch (e) {
-    return new Response(`Error: ${e instanceof Error ? e.message : 'unknown'}`, { status: 500 });
+    return corsify(req, new Response(`Error: ${e instanceof Error ? e.message : 'unknown'}`, { status: 500 }));
   }
 });
-
