@@ -1,0 +1,117 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, 001-build-homework-buddy ]
+  pull_request:
+    branches: [ main, 001-build-homework-buddy ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm test
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Run E2E tests on primary browsers only in CI for speed
+        browser: [chromium, firefox]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      
+      - name: Build application
+        run: npm run build
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+      
+      - name: Run E2E tests
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          CI: true
+      
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 7
+      
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 7
+
+  # Optional smoke test on WebKit (Safari) - less critical
+  e2e-webkit:
+    runs-on: ubuntu-latest
+    continue-on-error: true # Don't fail CI if WebKit has issues
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright WebKit
+        run: npx playwright install --with-deps webkit
+      
+      - name: Build application
+        run: npm run build
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+      
+      - name: Run WebKit E2E tests
+        run: npx playwright test --project=webkit
+        env:
+          CI: true
+      
+      - name: Upload WebKit test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-webkit
+          path: test-results/
+          retention-days: 3
