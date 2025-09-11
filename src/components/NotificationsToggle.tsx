@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Group, Switch, Text, Tooltip } from '@mantine/core';
 
 export default function NotificationsToggle() {
-  const supported = typeof window !== 'undefined' && 'Notification' in window;
+  const supported = typeof window !== 'undefined' && 
+    'Notification' in window && 
+    window.isSecureContext;
   const [permission, setPermission] = useState<NotificationPermission>(
     supported ? Notification.permission : 'denied'
   );
@@ -17,8 +19,11 @@ export default function NotificationsToggle() {
   }, [supported, permission]);
 
   if (!supported) {
+    const message = typeof window !== 'undefined' && !window.isSecureContext
+      ? 'Notifications require HTTPS. Please use a secure connection.'
+      : 'Notifications are not supported in this browser.';
     return (
-      <Text size="sm" c="dimmed">Notifications are not supported in this browser.</Text>
+      <Text size="sm" c="dimmed">{message}</Text>
     );
   }
 
@@ -48,7 +53,12 @@ export default function NotificationsToggle() {
         <Text size="sm" c="dimmed">Click to enable homework reminders</Text>
       )}
       {permission === 'denied' && (
-        <Tooltip label="Enable notifications in your browser settings" withArrow>
+        <Tooltip 
+          label="To enable: Click the 🔒 icon in your address bar → Site settings → Notifications → Allow" 
+          withArrow
+          multiline
+          w={300}
+        >
           <Text size="sm" c="red.6">Permission denied</Text>
         </Tooltip>
       )}

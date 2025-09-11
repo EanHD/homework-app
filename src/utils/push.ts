@@ -8,6 +8,12 @@ export type EnablePushResult = { reused: boolean; endpoint?: string };
 export async function enablePush(userId: string): Promise<EnablePushResult> {
   if (typeof window === 'undefined') return { reused: false };
   if (!('serviceWorker' in navigator) || !('Notification' in window)) return { reused: false };
+  
+  // Check for secure context (HTTPS required for Web Push)
+  if (!window.isSecureContext) {
+    console.warn('[enablePush] HTTPS context required for Web Push notifications');
+    return { reused: false };
+  }
 
   // Register service worker under app base
   const reg =
