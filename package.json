@@ -7,7 +7,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run --reporter=basic --pool=threads --maxWorkers=1"
+    "test": "vitest run --reporter=basic --pool=threads --maxWorkers=1",
+    "test:push": "tsx scripts/test-push.ts",
+    "test:push:subscriptions": "tsx scripts/test-push.ts subscriptions",
+    "test:push:send": "tsx scripts/test-push.ts send",
+    "test:push:trigger": "tsx scripts/test-push.ts trigger",
+    "test:push:config": "tsx scripts/test-push.ts config",
+    "test:push:js": "node scripts/test-push.js",
+    "test:push:js:config": "node scripts/test-push.js config"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -16,6 +23,7 @@
     "@mantine/dates": "^7.14.2",
     "@mantine/hooks": "^7.14.2",
     "@mantine/notifications": "^7.14.2",
+    "@supabase/supabase-js": "^2.57.4",
     "@tabler/icons-react": "^3.19.0",
     "dayjs": "^1.11.11",
     "localforage": "^1.10.0",
@@ -33,6 +41,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.3",
     "jsdom": "^24.1.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.4.0",
     "vite": "^5.4.0",
     "vitest": "^2.0.5"
