@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  // GitHub Pages project path
-  base: '/homework-app/',
+export default defineConfig(({ mode }) => ({
+  // Use root base in dev for stable HMR/WS; GH Pages base in build
+  base: mode === 'development' ? '/' : '/homework-app/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -21,4 +21,4 @@ export default defineConfig({
     minWorkers: 1,
     maxWorkers: 1,
   },
-});
+}));

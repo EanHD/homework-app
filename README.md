@@ -133,6 +133,24 @@ This repo follows Speckit (spec → plan → tasks → implementation):
   - In Settings: enable push, then “Send test notification”.
   - Service Worker handles `push` and deep-links on `notificationclick`.
 
+### Supabase Functions & CORS (dev + GH Pages)
+- Allowed origins are enforced in `supabase/functions/_shared/cors.ts`:
+  - `http://localhost:5173`, `http://127.0.0.1:5173`, `https://eanhd.github.io`.
+  - Update this list if your origin/user/org differs.
+- Preflight is handled (OPTIONS) and all responses include `Access-Control-Allow-*` headers.
+- JWT verification is disabled for browser‑called functions via per‑function config:
+  - `supabase/functions/subscribe/deno.json` and `supabase/functions/schedule/deno.json` set `{"deploy":{"verify_jwt":false}}`.
+  - Functions also include `@verify_jwt false` JSDoc metadata.
+- Deploy functions:
+  - `npx supabase functions deploy subscribe`
+  - `npx supabase functions deploy schedule`
+- Quick CORS check (preflight):
+  - `curl -i -X OPTIONS 'https://<project>.functions.supabase.co/subscribe' \`
+    `-H 'Origin: http://localhost:5173' \`
+    `-H 'Access-Control-Request-Method: POST' \`
+    `-H 'Access-Control-Request-Headers: content-type'`
+- For `/schedule`, header `Prefer: resolution=merge-duplicates` is allowed by CORS.
+
 Limitations:
 - iOS ≥16.4 supports Web Push only when installed to Home Screen; desktop Chromium works broadly.
 - Delivery during quiet hours is deferred until quiet hours end.

@@ -1,16 +1,16 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Button, Card, Group, Select, Stack, Switch, Text, Title, SegmentedControl, Divider, Alert, Badge } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconDownload, IconUpload, IconTrash, IconPlayerPlay, IconRosetteDiscountCheck } from '@tabler/icons-react';
 import { useSettingsStore } from '@/store/settings';
 import { useAppStore } from '@/store/app';
-import { base64UrlToUint8Array } from '@/utils/webpush';
-import { getRuntimeConfig } from '@/config';
+import { enablePush } from '@/utils/push';
 import { getOrCreateUserId } from '@/utils/userId';
-import { postSubscribe, deleteSubscription } from '@/services/pushApi';
+import { deleteSubscription, scheduleReminder } from '@/services/pushApi';
 import pkg from '../../package.json';
 import { saveState } from '@/store/persistence';
+import { getRuntimeConfig } from '@/config';
 import type { State, Class, Assignment } from '@/store/types';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -51,6 +51,24 @@ export default function SettingsPage() {
   const [perm, setPerm] = useState<NotificationPermission>(typeof Notification !== 'undefined' ? Notification.permission : 'default');
   const [subEndpoint, setSubEndpoint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [devCfg, setDevCfg] = useState<{ fb?: string; vplen?: number }>({});
+
+  useEffect(() => {
+    (async () => {
+      if (import.meta.env.DEV) {
+        try {
+          const rc = await getRuntimeConfig();
+          setDevCfg({ fb: rc.functionsBase, vplen: (rc.vapidPublic || '').length });
+          if (!rc.functionsBase || !rc.vapidPublic) {
+            console.warn('[settings] dev config missing', {
+              hasFunctionsBase: !!rc.functionsBase,
+              vapidPublicLen: (rc.vapidPublic || '').length,
+            });
+          }
+        } catch {}
+      }
+    })();
+  }, []);
 
   const onExport = async () => {
     const data = await exportData();
@@ -143,6 +161,11 @@ export default function SettingsPage() {
       <Card withBorder radius="md" p="md">
         <SectionTitle>Notifications</SectionTitle>
         <Stack>
+          {import.meta.env.DEV && (
+            <Text size="xs" c="dimmed">
+              Dev Config: functionsBase={<code>{devCfg.fb || '(missing)'}</code>} · vapidPublic len={devCfg.vplen || 0}
+            </Text>
+          )}
           <Switch
             checked={notificationsEnabled}
             onChange={(e) => setNotificationsEnabled(e.currentTarget.checked)}
@@ -161,26 +184,12 @@ export default function SettingsPage() {
           <Group gap="md" wrap="wrap">
             <Button
               onClick={async () => {
-                if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
                 setBusy(true);
                 try {
-                  const reg = (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.register('/homework-app/sw.js', { scope: '/homework-app/' }));
-                  let permission: NotificationPermission = Notification.permission;
-                  if (permission === 'default') permission = await Notification.requestPermission();
-                  setPerm(permission);
-                  if (permission !== 'granted') return;
-                  const cfg = await getRuntimeConfig();
-                  const publicKey = cfg.vapidPublic as string | undefined;
-                  if (!publicKey) { notifications.show({ message: 'Missing VAPID public key configuration', color: 'red' }); return; }
-                  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(publicKey) as unknown as BufferSource });
-                  const json = sub.toJSON() as any;
-                  setSubEndpoint(json?.endpoint ?? null);
-                  const res = await postSubscribe({ userId: getOrCreateUserId(), endpoint: json.endpoint, keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth } });
-                  if (!res || !res.ok) {
-                    notifications.show({ message: 'Subscribe failed', color: 'red' });
-                    return;
-                  }
-                  notifications.show({ message: 'Push notifications enabled', color: 'green' });
+                  const { reused, endpoint } = await enablePush(getOrCreateUserId());
+                  setPerm(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+                  if (endpoint) setSubEndpoint(endpoint);
+                  notifications.show({ message: reused ? 'Push subscription reused' : 'Push notifications enabled', color: 'green' });
                 } catch (e) {
                   notifications.show({ message: 'Failed to enable push', color: 'red' });
                 } finally {
@@ -216,11 +225,11 @@ export default function SettingsPage() {
                 try {
                   const now = Date.now() + 60_000;
                   const id = 'test-notification';
-                  const { postSchedule } = await import('@/services/pushApi');
-                  const res = await postSchedule({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: '/homework-app/#/main' });
+                  const res = await scheduleReminder({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: '/homework-app/#/main' });
                   if (!res || !res.ok) {
                     notifications.show({ message: 'Failed to schedule test', color: 'red' });
                   } else {
+                    try { console.log('[settings] scheduled test notification for ~60s'); } catch {}
                     notifications.show({ message: 'Test notification scheduled for 60s', color: 'blue' });
                   }
                 } catch {

@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: Homework App Push API — Reliability v2
+  version: 0.2.0
+servers:
+  - url: https://{project}.functions.supabase.co
+    variables:
+      project:
+        default: YOUR_PROJECT_ID
+paths:
+  /subscribe:
+    options:
+      summary: CORS preflight
+      responses:
+        '204': { description: No content }
+    post:
+      summary: Idempotently set the single active web push subscription for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, endpoint, keys]
+              properties:
+                userId: { type: string }
+                endpoint: { type: string }
+                keys:
+                  type: object
+                  required: [p256dh, auth]
+                  properties:
+                    p256dh: { type: string }
+                    auth: { type: string }
+      responses:
+        '200':
+          description: Subscription set; previous replaced
+        '400':
+          description: Invalid input
+
+  /schedule:
+    options:
+      summary: CORS preflight
+      responses:
+        '204': { description: No content }
+    post:
+      summary: Idempotently upsert a scheduled notification (create/update/delete)
+      parameters:
+        - in: header
+          name: Prefer
+          required: false
+          schema:
+            type: string
+            enum: [resolution=merge-duplicates]
+          description: Hint to merge duplicate schedules on retry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, assignmentId]
+              properties:
+                userId: { type: string }
+                assignmentId: { type: string }
+                title: { type: string }
+                body: { type: string }
+                sendAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: ISO 8601 UTC; if null, delete pending schedules for this assignment
+      responses:
+        '200': { description: Scheduled/updated/deleted; payload echoed }
+        '400': { description: Invalid input }
+
+  /send-notifications:
+    post:
+      summary: Cron-triggered function to deliver due notifications
+      description: Fetch unsent rows where send_at <= now; deliver to the user's active subscription; mark sent_at after ≥1 success; prune endpoints returning 404/410.
+      responses:
+        '200': { description: Delivery attempted; report included }
+
+components:
+  schemas:
+    DeliveryReport:
+      type: object
+      properties:
+        due: { type: integer }
+        delivered: { type: integer }
+        removedSubscriptions: { type: integer }
+        errors: { type: integer }
+

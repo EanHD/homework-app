@@ -46,6 +46,7 @@ Deno.serve(async (req) => {
       .limit(500);
     if (error) return cors(new Response(error.message, { status: 500 }));
 
+    const processed = (rows || []).length;
     let delivered = 0;
     let removed = 0;
     let errors = 0;
@@ -92,10 +93,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const report = { delivered, removedSubscriptions: removed, errors };
+    const report = { processed, successes: delivered, pruned: removed };
+    try { console.log(`[send-notifications] processed=${processed} successes=${delivered} pruned=${removed} errors=${errors}`); } catch {}
     return cors(new Response(JSON.stringify(report), { status: 200 }));
   } catch (e) {
     return cors(new Response(`Error: ${e instanceof Error ? e.message : 'unknown'}`, { status: 500 }));
   }
 });
-

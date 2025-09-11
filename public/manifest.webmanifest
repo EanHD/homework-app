@@ -7,7 +7,7 @@
   "background_color": "#ffffff",
   "theme_color": "#1E88E5",
   "icons": [
-    { "src": "/homework-app/icon.svg", "sizes": "any", "type": "image/svg+xml" },
-    { "src": "/homework-app/maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
   ]
 }

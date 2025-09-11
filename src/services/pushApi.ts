@@ -41,7 +41,23 @@ export async function deleteSubscription(payload: { userId: string; endpoint: st
 
 export async function postSchedule(payload: { userId: string; assignmentId: string; title?: string; body?: string; sendAt?: string; cancel?: boolean; url?: string }) {
   try {
-    return await api('/schedule', { json: payload });
+    return await api('/schedule', { json: payload, headers: { Prefer: 'resolution=merge-duplicates' } });
+  } catch {
+    // no-op
+  }
+}
+
+export async function scheduleReminder(payload: { userId: string; assignmentId: string; title: string; body: string; url: string; sendAt: string }) {
+  return await postSchedule(payload);
+}
+
+export async function cancelReminder(payload: { userId: string; assignmentId: string }) {
+  return await api('/schedule', { json: { userId: payload.userId, assignmentId: payload.assignmentId, sendAt: null }, headers: { Prefer: 'resolution=merge-duplicates' } });
+}
+
+export async function postSendNotifications() {
+  try {
+    return await api('/send-notifications');
   } catch {
     // no-op
   }
