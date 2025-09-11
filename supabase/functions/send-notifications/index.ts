@@ -3,8 +3,10 @@
  * @verify_jwt false
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as webpush from "https://deno.land/x/webpush@v1.2.0/mod.ts";
+// Use npm web-push via esm.sh to avoid deno.land/x resolution issues in Supabase bundler
+import webpush from "https://esm.sh/web-push@3.6.0";
 import { corsify, preflight } from "../_shared/cors.ts";
+import { sendPushNoPayload } from "../_shared/webpush.ts";
 
 type SchedRow = {
   id: string;
@@ -51,32 +53,27 @@ Deno.serve(async (req) => {
         .from('push_subscriptions')
         .select('endpoint,p256dh,auth')
         .eq('user_id', row.user_id);
-      const payload = JSON.stringify({
-        title: row.title,
-        body: row.body,
-        assignmentId: row.assignment_id,
-        url: row.url ?? '/homework-app/#/main',
-      });
-
       let anySent = false;
       for (const sub of subs || []) {
-        const pushSub = {
-          endpoint: (sub as any).endpoint,
-          keys: { p256dh: (sub as any).p256dh, auth: (sub as any).auth },
-        } as webpush.PushSubscription;
-
+        const endpoint = (sub as any).endpoint as string;
         try {
-          await webpush.sendNotification(pushSub, payload);
-          anySent = true;
-          delivered++;
-        } catch (e) {
-          const msg = String(e?.message || e);
-          if (msg.includes('410') || msg.includes('404')) {
-            await supabase.from('push_subscriptions').delete().match({ endpoint: (sub as any).endpoint });
+          const res = await sendPushNoPayload(endpoint, {
+            vapidPublic: VAPID_PUBLIC,
+            vapidPrivate: VAPID_PRIVATE,
+            subject: VAPID_SUBJECT,
+            ttl: 3600,
+          });
+          if (res.status === 404 || res.status === 410) {
+            await supabase.from('push_subscriptions').delete().match({ endpoint });
             removed++;
+          } else if (res.ok) {
+            anySent = true;
+            delivered++;
           } else {
             errors++;
           }
+        } catch (_e) {
+          errors++;
         }
       }
 
