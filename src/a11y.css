@@ -34,6 +34,11 @@
   border-radius: 4px;
 }
 
+/* Ensure focused elements are visible (prevent clipping behind FAB) */
+*:focus-visible {
+  scroll-margin-bottom: 100px;
+}
+
 /* Smooth UI transitions (kept subtle) */
 .mantine-Button-root,
 .mantine-ActionIcon-root,
