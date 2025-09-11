@@ -10,11 +10,8 @@ export async function showNotification(title: string, options?: NotificationOpti
         return;
       }
     }
-    // Fallback to page-level Notification
-    // eslint-disable-next-line no-new
-    new Notification(title, options);
+    // No page-level fallback; rely on SW only to display notifications
   } catch {
     // no-op on failure
   }
 }
-
