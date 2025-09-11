@@ -44,6 +44,9 @@ Deno.serve(async (req) => {
     let delivered = 0;
     let removed = 0;
     let errors = 0;
+    const statusCounts: Record<string, number> = {};
+    let lastStatus = 0;
+    let lastText = '';
 
     for (const row of (rows || []) as SchedRow[]) {
       const { data: subs } = await supabase
@@ -60,6 +63,10 @@ Deno.serve(async (req) => {
             subject: VAPID_SUBJECT,
             ttl: 3600,
           });
+          lastStatus = res.status;
+          try { lastText = await res.text(); } catch {}
+          const key = String(res.status);
+          statusCounts[key] = (statusCounts[key] || 0) + 1;
           if (res.status === 404 || res.status === 410) {
             await supabase.from('push_subscriptions').delete().match({ endpoint });
             removed++;
@@ -82,7 +89,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    const report = { processed, successes: delivered, pruned: removed, errors };
+    const report = {
+      processed,
+      successes: delivered,
+      pruned: removed,
+      errors,
+      statusCounts,
+      lastStatus,
+      lastText: (lastText || '').slice(0, 200),
+      vapidPublicLen: (VAPID_PUBLIC || '').length,
+    };
     try { console.log(`[send-notifications] processed=${processed} successes=${delivered} pruned=${removed} errors=${errors}`); } catch {}
     return corsify(req, new Response(JSON.stringify(report), { status: 200, headers: { 'Content-Type': 'application/json' } }));
   } catch (e) {
