@@ -8,6 +8,7 @@ import { useAppStore } from '@/store/app';
 import { enablePush } from '@/utils/push';
 import { getOrCreateUserId } from '@/utils/userId';
 import { deleteSubscription, scheduleReminder } from '@/services/pushApi';
+import { postSendNotifications } from '@/services/pushApi';
 import pkg from '../../package.json';
 import { saveState } from '@/store/persistence';
 import { getRuntimeConfig } from '@/config';
@@ -238,6 +239,21 @@ export default function SettingsPage() {
               }}
             >
               Send test notification
+            </Button>
+            <Button
+              variant="subtle"
+              onClick={async () => {
+                try {
+                  const res = await postSendNotifications();
+                  const text = await res?.text();
+                  console.log('[settings] send-notifications report', res?.status, text);
+                  notifications.show({ message: `Triggered deliverer: ${res?.status}`, color: res?.ok ? 'green' : 'red' });
+                } catch {
+                  notifications.show({ message: 'Failed to trigger deliverer', color: 'red' });
+                }
+              }}
+            >
+              Run delivery now (debug)
             </Button>
           </Group>
 
