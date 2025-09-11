@@ -2,9 +2,8 @@
  * Supabase Edge Function: send-notifications (cron)
  * @verify_jwt false
  */
+export const config = { verify_jwt: false } as const;
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-// Use npm web-push via esm.sh to avoid deno.land/x resolution issues in Supabase bundler
-import webpush from "https://esm.sh/web-push@3.6.0";
 import { corsify, preflight } from "../_shared/cors.ts";
 import { sendPushNoPayload } from "../_shared/webpush.ts";
 
@@ -31,8 +30,6 @@ Deno.serve(async (req) => {
     return corsify(req, new Response('Missing env', { status: 500 }));
   }
   const supabase = createClient(PROJECT_URL, SERVICE_ROLE_KEY);
-
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 
   try {
     const { data: rows, error } = await supabase

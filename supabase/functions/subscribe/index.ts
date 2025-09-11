@@ -2,6 +2,7 @@
  * Supabase Edge Function: subscribe (Supabase CLI deploy path)
  * @verify_jwt false
  */
+export const config = { verify_jwt: false } as const;
 // Supabase Edge Function: subscribe (Supabase CLI deploy path)
 // POST { userId: string, endpoint: string, keys: { p256dh: string, auth: string } }
 // DELETE { userId: string, endpoint: string }

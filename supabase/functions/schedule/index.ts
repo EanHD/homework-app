@@ -2,6 +2,7 @@
  * Supabase Edge Function: schedule (Supabase CLI deploy path)
  * @verify_jwt false
  */
+export const config = { verify_jwt: false } as const;
 // Supabase Edge Function: schedule (Supabase CLI deploy path)
 // POST { userId, assignmentId, title?, body?, sendAt?, url? } → insert idempotently
 // POST { userId, assignmentId, cancel: true } → mark pending as sent (cancel)
