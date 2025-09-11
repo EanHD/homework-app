@@ -47,14 +47,15 @@ export default defineConfig(({ mode }) => {
       },
       allowedHosts: ['1755e6d3-6953-4f17-a66c-a7d844f91178-00-3n90unkyc9g08.kirk.replit.dev'],
     },
-    test: {
-      environment: 'jsdom',
-      globals: true,
-      include: ['tests/**/*.spec.ts', 'tests/**/*.spec.tsx'],
-      setupFiles: ['tests/setup.ts'],
-      pool: 'threads',
-      minWorkers: 1,
-      maxWorkers: 1,
-    },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    include: ['tests/**/*.spec.ts', 'tests/**/*.spec.tsx'],
+    exclude: ['tests/e2e/**'],
+    setupFiles: ['tests/setup.ts'],
+    pool: 'threads',
+    minWorkers: 1,
+    maxWorkers: 1,
+  },
   };
 });
