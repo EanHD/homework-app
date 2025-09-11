@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: UI Layout Validation API
+  description: Client-side API contracts for UI layout and responsiveness
+  version: 1.0.0
+
+paths:
+  /layout/viewport:
+    get:
+      summary: Get current viewport dimensions
+      description: Calculate viewport and safe area measurements
+      responses:
+        '200':
+          description: Viewport measurements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  width:
+                    type: number
+                    description: Viewport width in pixels
+                    example: 375
+                  height:
+                    type: number
+                    description: Viewport height in pixels
+                    example: 812
+                  safeAreaInsets:
+                    type: object
+                    properties:
+                      top:
+                        type: number
+                        description: Top safe area inset
+                        example: 44
+                      bottom:
+                        type: number
+                        description: Bottom safe area inset
+                        example: 34
+                      left:
+                        type: number
+                        description: Left safe area inset
+                        example: 0
+                      right:
+                        type: number
+                        description: Right safe area inset
+                        example: 0
+                  deviceType:
+                    type: string
+                    enum: [mobile, tablet, desktop]
+                    example: mobile
+                  orientation:
+                    type: string
+                    enum: [portrait, landscape]
+                    example: portrait
+
+  /layout/keyboard:
+    get:
+      summary: Get virtual keyboard state
+      description: Detect virtual keyboard visibility and height
+      responses:
+        '200':
+          description: Keyboard state information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  visible:
+                    type: boolean
+                    description: Whether virtual keyboard is visible
+                    example: false
+                  height:
+                    type: number
+                    description: Keyboard height in pixels (0 if not visible)
+                    example: 0
+                  visualViewportHeight:
+                    type: number
+                    description: Available viewport height when keyboard is shown
+                    example: 812
+
+  /layout/header:
+    get:
+      summary: Get header layout measurements
+      description: Calculate header dimensions and positioning
+      responses:
+        '200':
+          description: Header layout information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  height:
+                    type: number
+                    description: Header height in pixels
+                    example: 60
+                  position:
+                    type: string
+                    enum: [static, fixed, sticky]
+                    example: fixed
+                  zIndex:
+                    type: number
+                    description: CSS z-index value
+                    example: 100
+                  obstructsContent:
+                    type: boolean
+                    description: Whether header overlaps main content
+                    example: false
+
+  /layout/content:
+    get:
+      summary: Get content area measurements
+      description: Calculate available content area after header/navigation
+      responses:
+        '200':
+          description: Content area information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  availableHeight:
+                    type: number
+                    description: Available content height in pixels
+                    example: 752
+                  paddingTop:
+                    type: number
+                    description: Top padding for header clearance
+                    example: 60
+                  paddingBottom:
+                    type: number
+                    description: Bottom padding for safe areas
+                    example: 34
+                  isClipped:
+                    type: boolean
+                    description: Whether content is clipped/hidden
+                    example: false
+                  scrollable:
+                    type: boolean
+                    description: Whether content area can scroll
+                    example: true
+
+components:
+  schemas:
+    LayoutValidationResult:
+      type: object
+      properties:
+        testName:
+          type: string
+          description: Name of the layout test
+          example: "header_height_check"
+        passed:
+          type: boolean
+          description: Whether the test passed
+          example: true
+        actualValue:
+          type: number
+          description: Measured value
+          example: 60
+        expectedValue:
+          type: number
+          description: Expected value
+          example: 60
+        tolerance:
+          type: number
+          description: Allowed variance in pixels
+          example: 2
+        message:
+          type: string
+          description: Test result description
+          example: "Header height within expected range"
+
+    ResponsiveBreakpoint:
+      type: object
+      properties:
+        name:
+          type: string
+          enum: [xs, sm, md, lg, xl]
+          description: Mantine breakpoint name
+        minWidth:
+          type: number
+          description: Minimum width for this breakpoint
+        active:
+          type: boolean
+          description: Whether this breakpoint is currently active
+
+# This API represents client-side JavaScript functions rather than HTTP endpoints
+# Used for defining contracts and test expectations for UI layout validation

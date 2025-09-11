@@ -1,0 +1,43 @@
+Phase 0 — Orientation (read-only)
+- Detect framework/build tool and hosting target.
+- Print a project map (key folders/files; where SW and Supabase code live).
+- Summarize SpecKit rules from `.github/` in 10–12 lines + list supported slash commands.
+
+Phase 1 — Notifications Audit
+- Map current push flow: SW file, registration code, subscription store, Supabase endpoints, env/VAPID keys, CORS.
+- Reproduce errors in DevTools (Console + Application → Service Workers/Push) and capture logs.
+
+Phase 2 — Minimal Fixes (small, safe diffs)
+- Fix SW registration timing/scope and add cache-busting.
+- Harden permission UX (graceful fallback, HTTPS checks).
+- Confirm Supabase: CORS allowed origins, `verify_jwt` per function, preflight works.
+- Provide `scripts/test-push.[ts|js]` and example `curl`.
+
+Phase 3 — UI Polish
+- Fix header height and bottom bar overlap.
+- Add safe-area insets handling (`padding-bottom: env(safe-area-inset-bottom)` or equivalent).
+- Prevent clipping (avoid brittle `100vh` on mobile; use min-height calc or container-based height).
+- Verify keyboard/IME push-up doesn’t hide inputs/content (mobile).
+
+Phase 4 — Tests & CI
+- Add e2e for notification subscription + mocked push receipt.
+- Add a layout guard (viewport assertions or screenshot).
+- Ensure CI executes (wire into SpecKit CI if present).
+
+Phase 5 — Docs & PRs
+- Write `NOTIFICATIONS_REPORT.md`, `UI_REPORT.md`, `SMOKE_TEST.md`.
+- Open PRs with checklists, screenshots/logs, and instructions.
+- Provide a short Release Notes draft.
+
+Branching/PR Strategy
+- Feature branches per area:
+  - `feat/notifications-m1`
+  - `fix/ui-safe-area-m1`
+  - `chore/tests-ci-m1`
+- Small PRs; link them in a tracking issue or meta-PR if needed.
+
+Timeboxing Guidelines
+- If a fix exceeds 50 lines or 30 minutes of uncertainty, stop and propose an alternative with tradeoffs.
+
+Handoffs
+- Post commands I can run locally and on prod to validate, with expected output and screenshots to match.

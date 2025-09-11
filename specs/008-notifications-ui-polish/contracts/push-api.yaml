@@ -1,0 +1,268 @@
+openapi: 3.0.3
+info:
+  title: Push Notification API
+  description: Supabase Edge Functions for homework app push notifications
+  version: 1.0.0
+  
+servers:
+  - url: https://tihojhmqghihckekvprj.functions.supabase.co
+    description: Supabase Edge Functions
+
+paths:
+  /subscribe:
+    post:
+      summary: Register push subscription
+      description: Register a device for push notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - endpoint
+                - keys
+              properties:
+                userId:
+                  type: string
+                  description: Anonymous user identifier
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                endpoint:
+                  type: string
+                  format: uri
+                  description: Push service endpoint URL
+                  example: "https://fcm.googleapis.com/fcm/send/..."
+                keys:
+                  type: object
+                  required:
+                    - p256dh
+                    - auth
+                  properties:
+                    p256dh:
+                      type: string
+                      description: Base64-encoded public key
+                      example: "BGNNDVVFNvH..."
+                    auth:
+                      type: string
+                      description: Base64-encoded auth secret
+                      example: "k2dra3f8..."
+      responses:
+        '200':
+          description: Subscription registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  action:
+                    type: string
+                    enum: [replaced]
+                  userId:
+                    type: string
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Unregister push subscription
+      description: Remove a device push subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - endpoint
+              properties:
+                userId:
+                  type: string
+                  description: Anonymous user identifier
+                endpoint:
+                  type: string
+                  format: uri
+                  description: Push service endpoint URL to remove
+      responses:
+        '200':
+          description: Subscription deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  action:
+                    type: string
+                    example: "deleted"
+
+    options:
+      summary: CORS preflight
+      description: Handle preflight requests for CORS
+      responses:
+        '204':
+          description: CORS preflight response
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: "GET,POST,OPTIONS,DELETE,PATCH"
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: "Content-Type, Authorization, Prefer, Accept"
+
+  /schedule:
+    post:
+      summary: Schedule notification
+      description: Schedule a push notification for future delivery
+      parameters:
+        - name: Prefer
+          in: header
+          description: Upsert behavior preference
+          schema:
+            type: string
+            enum: ["resolution=merge-duplicates"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - assignmentId
+              properties:
+                userId:
+                  type: string
+                  description: Anonymous user identifier
+                assignmentId:
+                  type: string
+                  description: Assignment identifier for reminder
+                title:
+                  type: string
+                  description: Notification title
+                  example: "Assignment Due Soon"
+                body:
+                  type: string
+                  description: Notification body text
+                  example: "Math homework due in 1 hour"
+                sendAt:
+                  type: string
+                  format: date-time
+                  description: UTC timestamp when to send notification
+                  example: "2025-09-11T15:30:00.000Z"
+                url:
+                  type: string
+                  description: Deep link URL for notification click
+                  example: "/homework-app/#/assignment/123"
+                cancel:
+                  type: boolean
+                  description: Cancel existing scheduled notifications
+                  default: false
+      responses:
+        '200':
+          description: Notification scheduled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  action:
+                    type: string
+                    enum: [inserted, merged, canceled]
+                  payload:
+                    type: object
+                    description: Echo of request payload
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    options:
+      summary: CORS preflight for schedule
+      responses:
+        '204':
+          description: CORS preflight response
+
+  /send-notifications:
+    post:
+      summary: Send pending notifications (cron)
+      description: Process and send all pending notifications
+      responses:
+        '200':
+          description: Notification processing complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processed:
+                    type: integer
+                    description: Number of notifications processed
+                  successes:
+                    type: integer
+                    description: Number successfully delivered
+                  pruned:
+                    type: integer
+                    description: Number of invalid subscriptions removed
+                  errors:
+                    type: integer
+                    description: Number of delivery failures
+                  statusCounts:
+                    type: object
+                    description: HTTP status code counts from push service
+                  lastStatus:
+                    type: integer
+                    description: Most recent push service response code
+                  lastText:
+                    type: string
+                    description: Most recent push service response (truncated)
+                  vapidPublicLen:
+                    type: integer
+                    description: Length of VAPID public key (for debugging)
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: "Invalid input"
+
+  securitySchemes:
+    supabase_auth:
+      type: http
+      scheme: bearer
+      description: Supabase service role key (functions have verify_jwt disabled)
+
+security: []  # No authentication required (verify_jwt: false)
