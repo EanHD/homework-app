@@ -53,6 +53,8 @@ jobs:
         env:
           # Ensure correct base path for repo
           GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Disable Jekyll processing
+        run: touch dist/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
