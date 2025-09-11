@@ -96,12 +96,13 @@ npx playwright show-report
 ### 6. PWA Manifest Validation
 ```bash
 # Check PWA manifest
-curl -s http://localhost:5173/manifest.json | jq .
+curl -s http://localhost:5173/manifest.webmanifest | jq .
 # Expected: Valid JSON with name, icons, start_url
 
 # Validate service worker scope
 node -e "
-const manifest = require('./public/manifest.json');
+const fs = require('fs');
+const manifest = JSON.parse(fs.readFileSync('./public/manifest.webmanifest', 'utf8'));
 console.log('App name:', manifest.name);
 console.log('Start URL:', manifest.start_url);
 console.log('Scope:', manifest.scope);
@@ -127,7 +128,7 @@ curl -I $PROD_URL/sw.js
 # Expected: HTTP/1.1 200 OK
 
 # 3. PWA manifest
-curl -s $PROD_URL/manifest.json | jq .
+curl -s $PROD_URL/manifest.webmanifest | jq .
 # Expected: Valid JSON with correct start_url and scope
 
 # 4. Check base path configuration

@@ -40,7 +40,7 @@ This release significantly improves the push notification system reliability and
 - **Service worker infinite refresh loop** - Fixed development environment constant reloading
 - **Mobile header overlap** - Content now properly visible on mobile devices
 - **FAB content blocking** - Floating action button no longer blocks scrollable content
-- **TypeScript errors** - Resolved 25+ LSP diagnostics in service worker implementation
+- **TypeScript errors** - Resolved multiple LSP diagnostics in service worker implementation
 
 ### Service Worker Improvements
 - **Stable build IDs** in development mode prevent unnecessary updates
@@ -90,8 +90,8 @@ const BUILD_ID = import.meta.env.DEV ? 'dev-stable' : __GIT_COMMIT_HASH__;
 ```
 
 ### Testing Coverage
-- **Unit tests**: 95% code coverage maintained
-- **E2E tests**: Complete subscription flow automation
+- **Unit tests**: Comprehensive test suite maintained with Vitest
+- **E2E tests**: Complete subscription flow automation with Playwright
 - **Visual regression**: Ready for baseline generation
 - **Browser support**: Chrome, Firefox, Safari desktop + mobile
 
