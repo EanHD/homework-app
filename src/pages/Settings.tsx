@@ -226,7 +226,8 @@ export default function SettingsPage() {
                 try {
                   const now = Date.now() + 60_000;
                   const id = 'test-notification';
-                  const res = await scheduleReminder({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: '/homework-app/#/main' });
+                  const { withBase } = await import('@/base');
+                  const res = await scheduleReminder({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: withBase('#/main') });
                   if (!res || !res.ok) {
                     notifications.show({ message: 'Failed to schedule test', color: 'red' });
                   } else {

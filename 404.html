@@ -2,10 +2,17 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="refresh" content="0; url=/homework-app/" />
-    <script>location.replace('/homework-app/');</script>
+    <meta http-equiv="refresh" content="0; url=." />
+    <script>
+      (function () {
+        var path = location.pathname;
+        var segs = path.split('/').filter(Boolean);
+        var base = '/' + (segs[0] ? segs[0] + '/' : '');
+        if (!segs[0]) base = './';
+        location.replace(base);
+      })();
+    </script>
     <title>Redirecting…</title>
   </head>
   <body></body>
 </html>
-

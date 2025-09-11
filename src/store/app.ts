@@ -112,7 +112,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const sendAt = new Date(Math.max(sendAtMs, Date.now())).toISOString();
         const { postSchedule } = await import('@/services/pushApi');
         const { getOrCreateUserId } = await import('@/utils/userId');
-        const url = `/homework-app/#/assignment/${a.id}`;
+        const { withBase } = await import('@/base');
+        const url = withBase(`#/assignment/${a.id}`);
         await postSchedule({ userId: getOrCreateUserId(), assignmentId: a.id, title: a.title, body: '', sendAt, url });
       }
     } catch {
@@ -136,10 +137,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       const offsetMin = updated.remindAtMinutes as number | null | undefined;
       const { postSchedule } = await import('@/services/pushApi');
       const { getOrCreateUserId } = await import('@/utils/userId');
+      const { withBase } = await import('@/base');
       if (enabled && typeof offsetMin === 'number' && offsetMin >= 0) {
         const sendAtMs = new Date(updated.dueAt).getTime() - offsetMin * 60_000;
         const sendAt = new Date(Math.max(sendAtMs, Date.now())).toISOString();
-        const url = `/homework-app/#/assignment/${updated.id}`;
+        const url = withBase(`#/assignment/${updated.id}`);
         await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, title: updated.title, body: '', sendAt, url });
       } else {
         await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, cancel: true });

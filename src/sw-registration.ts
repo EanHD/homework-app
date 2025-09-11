@@ -1,8 +1,11 @@
-// Minimal service worker registration using workbox-window when available
+// Minimal service worker registration using dynamic base
+import { appBase, withBase } from '@/base';
+
 export function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     try {
-      navigator.serviceWorker.register('/homework-app/sw.js', { scope: '/homework-app/' });
+      const base = appBase();
+      navigator.serviceWorker.register(withBase('/sw.js'), { scope: base });
     } catch (e) {
       // no-op
     }

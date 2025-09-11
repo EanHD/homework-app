@@ -1,8 +1,8 @@
 {
   "name": "Homework Buddy",
   "short_name": "Homework Buddy",
-  "start_url": "/homework-app/#/main",
-  "scope": "/homework-app/",
+  "start_url": "./#/main",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1E88E5",

@@ -1,6 +1,7 @@
 import { getRuntimeConfig } from '@/config';
 import { base64UrlToUint8Array } from '@/utils/webpush';
 import { getSubscriptionJSON, postSubscribe } from '@/services/pushApi';
+import { appBase, withBase } from '@/base';
 
 export type EnablePushResult = { reused: boolean; endpoint?: string };
 
@@ -11,7 +12,7 @@ export async function enablePush(userId: string): Promise<EnablePushResult> {
   // Register service worker under app base
   const reg =
     (await navigator.serviceWorker.getRegistration()) ||
-    (await navigator.serviceWorker.register('/homework-app/sw.js', { scope: '/homework-app/' }));
+    (await navigator.serviceWorker.register(withBase('/sw.js'), { scope: appBase() }));
 
   // Ensure permission
   let permission: NotificationPermission = Notification.permission;

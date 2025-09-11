@@ -6,6 +6,21 @@
     <base href="%BASE_URL%">
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials" />
+    <script>
+      // Warn if GitHub Pages is serving the dev index (which points at /src/main.tsx)
+      (function () {
+        try {
+          var isProdHost = !/^(localhost|127\.0\.0\.1)/.test(location.hostname);
+          var hasDevScript = Array.from(document.scripts || []).some(function (s) {
+            var src = (s && s.getAttribute && s.getAttribute('src')) || '';
+            return src.indexOf('/src/main') !== -1;
+          });
+          if (isProdHost && hasDevScript) {
+            console.error('[deployment] This page is using the dev index.html (requests /src/main.tsx). Make sure GitHub Pages deploys dist/.');
+          }
+        } catch {}
+      })();
+    </script>
     <title>Homework Buddy</title>
   </head>
   <body>

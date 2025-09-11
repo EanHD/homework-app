@@ -4,10 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Redirecting…</title>
-    <meta http-equiv="refresh" content="0; url=/homework-app/" />
+    <meta http-equiv="refresh" content="0; url=." />
     <script>
       (function () {
-        var base = '/homework-app/';
+        // Derive base as the first path segment (repo name) for GH Pages project sites
+        var path = location.pathname;
+        var segs = path.split('/').filter(Boolean);
+        var base = '/' + (segs[0] ? segs[0] + '/' : '');
+        // Fallback to './' if not a project page
+        if (!segs[0]) base = './';
         var target = base + (location.search || '') + (location.hash || '');
         location.replace(target);
       })();
@@ -17,4 +22,3 @@
     Redirecting…
   </body>
   </html>
-
