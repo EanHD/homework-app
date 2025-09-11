@@ -1,5 +1,11 @@
 /* Simple app-shell service worker with offline support and basic notification click handling */
-const CACHE_NAME = 'hb-app-shell-v3';
+
+/// <reference lib="webworker" />
+
+declare const self: ServiceWorkerGlobalScope;
+declare const __BUILD_ID__: string;
+
+const CACHE_NAME = `hb-app-shell-${__BUILD_ID__}`;
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -7,7 +13,7 @@ self.addEventListener('install', (event) => {
     const shell = [base, base + 'index.html', base + 'manifest.webmanifest', base + 'icon.svg', base + 'maskable.svg'];
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(shell);
-    await self.skipWaiting();
+    // Don't skip waiting automatically - wait for message from page
   })());
 });
 
@@ -86,4 +92,11 @@ self.addEventListener('notificationclick', (event) => {
       if (self.clients.openWindow) return self.clients.openWindow(url);
     })
   );
+});
+
+// Handle messages from page (for update coordination)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
