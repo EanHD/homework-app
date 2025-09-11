@@ -42,18 +42,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-// Initialize lightweight in-app scheduler for near-future reminders
+// Initialize lightweight in-app scheduler only if no Push subscription exists
 try {
   const store = createStore();
-  const scheduler = createScheduler(store);
-  // Start scheduler and subscribe to store changes
-  const stop = scheduler.start();
-  // Re-check shortly to catch async hydration
-  setTimeout(() => scheduler.checkNow(), 1000);
-  // Optionally expose stop on window for debugging
-  (window as any).__hbStopScheduler = stop;
-  // Background cleanup: archive done items older than 90 days
-  void bootCleanup();
+  (async () => {
+    try {
+      let hasPushSub = false;
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager.getSubscription();
+        hasPushSub = !!sub;
+      }
+      // If a push subscription exists, rely on backend push (avoid duplicate local notifications)
+      if (!hasPushSub) {
+        const scheduler = createScheduler(store);
+        const stop = scheduler.start();
+        setTimeout(() => scheduler.checkNow(), 1000);
+        (window as any).__hbStopScheduler = stop;
+      }
+    } catch {
+      // ignore and continue
+    }
+    // Background cleanup: archive done items older than 90 days
+    void bootCleanup();
+  })();
 } catch {
   // ignore scheduler init errors in non-browser/test environments
 }
