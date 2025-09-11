@@ -43,6 +43,36 @@
   transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
 
+/* Modern viewport height support for mobile */
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  /* Safe-area insets handled by individual layout components */
+}
+
+/* Use dynamic viewport height when supported (better for mobile) */
+@supports (height: 100dvh) {
+  body {
+    min-height: 100dvh;
+  }
+}
+
+/* Full-height container utility */
+.full-height,
+[data-full-height] {
+  min-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .full-height,
+  [data-full-height] {
+    min-height: 100dvh;
+  }
+}
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

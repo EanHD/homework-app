@@ -48,6 +48,7 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
       header={{ height: { base: 48, sm: 60 } }}
       navbar={{ width: 260, breakpoint: 'md', collapsed: { mobile: !opened } }}
       padding="md"
+      data-full-height
     >
       <MantineAppShell.Header 
         component="header" 
@@ -115,7 +116,7 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
         role="main"
         style={{
           paddingLeft: 'env(safe-area-inset-left)',
-          paddingRight: 'env(safe-area-inset-right)',
+          paddingRight: 'env(safe-area-inset-right)', 
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)' // 80px for mobile FAB + padding
         }}
         data-mobile-fab-compensation="true"
