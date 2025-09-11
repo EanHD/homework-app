@@ -2,14 +2,15 @@
 
 /// <reference lib="webworker" />
 
-declare const self: ServiceWorkerGlobalScope & typeof globalThis;
+// Service Worker TypeScript declarations
+const sw = self as unknown as ServiceWorkerGlobalScope;
 declare const __BUILD_ID__: string;
 
 const CACHE_NAME = `hb-app-shell-${__BUILD_ID__}`;
 
-self.addEventListener('install', (event: ExtendableEvent) => {
+sw.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const base = new URL(self.registration.scope).pathname; // e.g., '/homework-app/' or '/'
+    const base = new URL(sw.registration.scope).pathname; // e.g., '/homework-app/' or '/'
     const shell = [base, base + 'index.html', base + 'manifest.webmanifest', base + 'icon.svg', base + 'maskable.svg'];
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(shell);
@@ -17,18 +18,18 @@ self.addEventListener('install', (event: ExtendableEvent) => {
   })());
 });
 
-self.addEventListener('activate', (event: ExtendableEvent) => {
+sw.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
       .then((keys) => Promise.all(keys.map((k) => (k === CACHE_NAME ? undefined : caches.delete(k)))))
-      .then(() => self.clients.claim())
+      .then(() => sw.clients.claim())
   );
 });
 
 // Cache strategy: navigation requests → network-first with offline fallback
 // Static assets (same-origin) → stale-while-revalidate
-self.addEventListener('fetch', (event: FetchEvent) => {
+sw.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
   if (req.method !== 'GET') return;
@@ -37,9 +38,10 @@ self.addEventListener('fetch', (event: FetchEvent) => {
     event.respondWith(
       fetch(req)
         .then((res) => res)
-        .catch(() => {
-          const base = new URL(self.registration.scope).pathname;
-          return caches.match(base + 'index.html');
+        .catch(async () => {
+          const base = new URL(sw.registration.scope).pathname;
+          const cached = await caches.match(base + 'index.html');
+          return cached || new Response('Offline', { status: 503 });
         })
     );
     return;
@@ -47,56 +49,55 @@ self.addEventListener('fetch', (event: FetchEvent) => {
 
   if (url.origin === location.origin) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        const fetchPromise = fetch(req)
-          .then((res) => {
-            const resClone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-            return res;
-          })
-          .catch(() => cached);
-        return cached || fetchPromise;
+      caches.match(req).then(async (cached) => {
+        const fresh = fetch(req).catch(() => cached || new Response('Offline', { status: 503 }));
+        if (cached) return cached;
+        return fresh;
       })
     );
   }
 });
 
-// Handle incoming Web Push messages
-self.addEventListener('push', (event: PushEvent) => {
-  try {
-    const data = event.data && event.data.json ? event.data.json() : {};
-    const title = data.title || 'Homework Buddy';
-    const base = new URL(self.registration.scope).pathname; // '/homework-app/' or '/'
-    const options = {
-      body: data.body,
-      data,
-      icon: base + 'icon.svg',
-      badge: base + 'maskable.svg',
-    };
-    event.waitUntil(self.registration.showNotification(title, options));
-  } catch {
-    // ignore malformed payloads
-  }
+// Handle push notification
+sw.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  const data = event.data.json();
+  const options: NotificationOptions = {
+    body: data.body || 'Homework reminder',
+    icon: new URL(sw.registration.scope).pathname + 'icon.svg',
+    badge: new URL(sw.registration.scope).pathname + 'maskable.svg',
+    tag: data.tag || 'homework',
+    requireInteraction: false,
+    data: data.data || {},
+  };
+
+  event.waitUntil(sw.registration.showNotification(data.title || 'Homework Buddy', options));
 });
 
-self.addEventListener('notificationclick', (event: NotificationEvent) => {
+// Handle notification click
+sw.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
+  const urlToOpen = event.notification.data?.url || new URL(sw.registration.scope).origin + new URL(sw.registration.scope).pathname;
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients: readonly WindowClient[]) => {
-      const data = (event.notification && event.notification.data) || {};
-      const base = new URL(self.registration.scope).pathname || '/';
-      const url = (data && data.url) || (base + '#/main');
-      for (const c of clients) {
-        if ('focus' in c) { c.navigate(url); return c.focus(); }
+    sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Try to focus existing client
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
       }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
+      // Open new window
+      if (sw.clients.openWindow) return sw.clients.openWindow(urlToOpen);
     })
   );
 });
 
-// Handle messages from page (for update coordination)
-self.addEventListener('message', (event: ExtendableMessageEvent) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+// Handle service worker update message
+sw.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    sw.skipWaiting();
   }
 });

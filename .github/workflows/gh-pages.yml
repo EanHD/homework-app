@@ -54,7 +54,9 @@ jobs:
           # Ensure correct base path for repo
           GITHUB_REPOSITORY: ${{ github.repository }}
       - name: Disable Jekyll processing
-        run: touch dist/.nojekyll
+        run: |
+          touch dist/.nojekyll
+          echo "GitHub Pages will serve static files directly (no Jekyll processing)" > dist/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
