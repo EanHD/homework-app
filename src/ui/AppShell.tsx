@@ -45,20 +45,47 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
 
   return (
     <MantineAppShell
-      header={{ height: 60 }}
+      header={{ height: { base: 48, sm: 60 } }}
       navbar={{ width: 260, breakpoint: 'md', collapsed: { mobile: !opened } }}
       padding="md"
     >
-      <MantineAppShell.Header component="header" aria-label="Top bar">
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
+      <MantineAppShell.Header 
+        component="header" 
+        aria-label="Top bar"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 'env(safe-area-inset-left)', 
+          paddingRight: 'env(safe-area-inset-right)'
+        }}
+      >
+        <Group h="100%" px="sm" justify="space-between" gap="xs">
+          <Group gap="xs">
             <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" aria-label="Toggle navigation" />
-            <Title order={3}>{pageTitle}</Title>
-            <Badge variant="light" radius="xl" color="gray" aria-label="Current date">
+            <Title 
+              order={4} 
+              size="h5"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {pageTitle}
+            </Title>
+            <Badge 
+              variant="light" 
+              radius="xl" 
+              color="gray" 
+              aria-label="Current date"
+              size="xs"
+              hiddenFrom="xs"
+            >
               {nowChip}
             </Badge>
           </Group>
-          <Button leftSection={<IconPlus size={16} />} onClick={onAdd} visibleFrom="md" data-onboarding="add-button">
+          <Button 
+            leftSection={<IconPlus size={16} />} 
+            onClick={onAdd} 
+            visibleFrom="md" 
+            data-onboarding="add-button"
+            size="sm"
+          >
             Add
           </Button>
         </Group>
@@ -84,7 +111,15 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
         </ScrollArea>
       </MantineAppShell.Navbar>
 
-      <MantineAppShell.Main role="main">{children}</MantineAppShell.Main>
+      <MantineAppShell.Main 
+        role="main"
+        style={{
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)'
+        }}
+      >
+        {children}
+      </MantineAppShell.Main>
     </MantineAppShell>
   );
 }

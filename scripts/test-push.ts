@@ -30,8 +30,8 @@ interface TestConfig {
 interface PushSubscription {
   user_id: string;
   endpoint: string;
-  p256dh_key: string;
-  auth_key: string;
+  p256dh: string;
+  auth: string;
   created_at: string;
 }
 
@@ -79,7 +79,7 @@ class PushTester {
     try {
       const { data, error } = await this.supabase
         .from('push_subscriptions')
-        .select('user_id, endpoint, p256dh_key, auth_key, created_at')
+        .select('user_id, endpoint, p256dh, auth, created_at')
         .order('created_at', { ascending: false })
         .limit(10);
 
