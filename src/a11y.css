@@ -78,6 +78,13 @@ body {
   }
 }
 
+/* Fallback for Edge: ensure main content is offset when navbar is visible (>= md ~ 62em) */
+@media (min-width: 62em) {
+  .mantine-AppShell-main {
+    margin-left: 260px;
+  }
+}
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
