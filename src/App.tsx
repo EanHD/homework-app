@@ -146,7 +146,14 @@ export default function App() {
         onClick={() => setFormOpen(true)}
         hiddenFrom="md"
         aria-label="Add assignment"
-        style={{ position: 'fixed', right: 16, bottom: 16, borderRadius: 9999, boxShadow: '0 6px 16px rgba(0,0,0,0.18)' }}
+        style={{ 
+          position: 'fixed', 
+          right: 'calc(16px + env(safe-area-inset-right))', 
+          bottom: 'calc(16px + env(safe-area-inset-bottom))', 
+          borderRadius: 9999, 
+          boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
+          zIndex: 1000
+        }}
       >
         Add
       </Button>
