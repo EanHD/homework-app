@@ -1,2 +1,0 @@
-# Disable Jekyll processing when GitHub Pages is misconfigured to build from a branch
-# Our deployment uses GitHub Actions with an uploaded artifact (dist/)

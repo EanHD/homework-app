@@ -219,6 +219,18 @@ const allowed = new Set([
 ]); // ✅ SECURE
 ```
 
+### 3. Permission and Unsupported/HTTP Handling
+
+User-facing flows now provide clear guidance when push cannot be enabled:
+- Unsupported browser: Surfaces a message if Service Worker or Notifications APIs are unavailable.
+- Insecure context: Detects non-HTTPS and instructs users to open the site over HTTPS (or GitHub Pages) to enable push.
+- Permission denied: Explicitly reports denial without crashing the flow.
+- Missing configuration: Warns if `vapidPublic` is not configured, pointing to `public/config.json` or environment overrides.
+
+Implementation details:
+- UI button in Settings wraps `enablePush()` and maps error codes/messages to Mantine notifications.
+- `enablePush()` now throws explicit error codes for unsupported environments (`unsupported:*`), insecure context (`insecure-context`), and permission denial (`permission-denied`).
+
 **Impact**: 🛡️ **HIGH** - Prevents cross-origin attacks and unauthorized API access
 
 ### 3. HTTPS Enforcement
@@ -619,6 +631,50 @@ a897258 Expand accepted domains and enable JWT verification
 **Local**: Set VITE_VAPID_PUBLIC in .env.local
 **Override**: Use localStorage for testing different keys
 
+### Permission Denied
+```
+❌ Notifications permission denied
+```
+**Cause**: User dismissed or denied the browser permission prompt  
+**Fix**: Re-enable notifications in browser site settings, then click “Enable push notifications” again  
+**UI**: Settings shows "Permission: denied" badge and a red error message
+
+### Unsupported Browser / API Unavailable
+```
+❌ This browser does not support Service Worker/Notifications
+```
+**Cause**: Missing Service Worker or Notifications API (or disabled)  
+**Fix**: Use a modern browser (Chrome/Edge/Firefox/Safari) with notifications enabled; avoid Private windows that disable SW/Push
+
+### Insecure Context (HTTP)
+```
+❌ HTTPS required. Open the site via https:// or GitHub Pages to enable push.
+```
+**Cause**: Web Push requires a secure origin  
+**Fix**: Use https:// in production; in dev, use a secure preview (e.g., Replit HTTPS)  
+**Reference**: `enablePush()` enforces HTTPS and shows guidance
+
+### Functions Base Misconfigured
+```
+❌ functionsBase not configured or incorrect host
+```
+**Cause**: `public/config.json` missing/incorrect, or base tag mismatch breaks fetch path  
+**Fix**: Verify `public/config.json` contains a valid `functionsBase`; ensure `<base href="/homework-app/">` in dist/index.html; clear cache and reload
+
+### CORS Origin Mismatch
+```
+❌ CORS policy: Response to preflight request doesn't pass
+```
+**Cause**: Origin not exactly listed in allowlist  
+**Fix**: Confirm exact origin (scheme, host, port) is present in `supabase/functions/_shared/cors.ts`; no trailing slashes. Use curl preflight examples to validate
+
+### Service Worker Reload Loops
+```
+⚠️ Page reloads repeatedly after update
+```
+**Cause**: SW waiting/activation conflicts or non-versioned caches  
+**Fix**: Our SW uses `hb-app-shell-<__BUILD_ID__>` cache and skipWaiting on update; do a hard reload (Shift+Reload) once. In dev, buildId is `dev-stable` to avoid churn
+
 ### Service Worker Update Issues
 ```
 ⚠️ Service worker not updating with new version
@@ -663,6 +719,16 @@ a897258 Expand accepted domains and enable JWT verification
 - **HTTPS Validation**: `npm run validate:https` (works without auth)
 
 ## Concrete Evidence & Validation
+
+### Test Artifacts (009)
+- Screenshots:
+  - Service Worker registered (Application → Service Workers) with scope `/homework-app/`
+  - Settings page showing “Push notifications enabled” and “Subscribed” badge
+  - GitHub Pages site loaded at `https://eanhd.github.io/homework-app/`
+- Logs to attach:
+  - Successful CORS preflight via curl (see `specs/009-repair-replit-changes/cors-allowlist.md`)
+  - Output of `npm run test:push:config` and, if applicable, `:subscriptions`
+  - Console snippet from SW update or enablePush flow (optional)
 
 ### Production Validation (September 11, 2025 - 9:33 PM UTC)
 

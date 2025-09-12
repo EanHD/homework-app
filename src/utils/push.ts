@@ -6,8 +6,8 @@ import { appBase, withBase } from '@/base';
 export type EnablePushResult = { reused: boolean; endpoint?: string };
 
 export async function enablePush(userId: string): Promise<EnablePushResult> {
-  if (typeof window === 'undefined') return { reused: false };
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return { reused: false };
+  if (typeof window === 'undefined') throw new Error('unsupported:non-browser');
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) throw new Error('unsupported:browser');
   
   // Check for secure context (HTTPS required for Web Push)
   // Allow tests to bypass this check to exercise logic in jsdom
@@ -15,7 +15,7 @@ export async function enablePush(userId: string): Promise<EnablePushResult> {
   const isTest = !!env?.TEST || env?.MODE === 'test';
   if (!window.isSecureContext && !isTest) {
     console.warn('[enablePush] HTTPS context required for Web Push notifications');
-    return { reused: false };
+    throw new Error('insecure-context');
   }
 
   // Register service worker under app base
@@ -26,7 +26,7 @@ export async function enablePush(userId: string): Promise<EnablePushResult> {
   // Ensure permission
   let permission: NotificationPermission = Notification.permission;
   if (permission === 'default') permission = await Notification.requestPermission();
-  if (permission !== 'granted') return { reused: false };
+  if (permission !== 'granted') throw new Error('permission-denied');
 
   // Try to reuse existing subscription
   let sub = await reg.pushManager.getSubscription();
