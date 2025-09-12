@@ -109,8 +109,8 @@ export default function OnboardingHints({
     return null;
   }
 
-  // Find target element
-  const targetElement = document.querySelector(currentStepData.target);
+  // Find target element and ensure it's visible in viewport
+  const targetElement = document.querySelector(currentStepData.target) as HTMLElement | null;
   if (!targetElement) {
     // If target element is not found, skip to next step or complete
     setTimeout(() => {
@@ -123,6 +123,11 @@ export default function OnboardingHints({
     return null;
   }
 
+  // Scroll target into view and center it for clarity
+  try {
+    targetElement.scrollIntoView({ block: 'center', inline: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+  } catch {}
+
   return (
     <Popover
       opened={isActive}
@@ -134,19 +139,13 @@ export default function OnboardingHints({
       closeOnEscape={false}
       closeOnClickOutside={false}
       transitionProps={{ duration: reducedMotion ? 0 : 200 }}
+      withinPortal
+      // Anchor popover to the actual target element
+      // @ts-ignore Mantine supports positionTarget in v7
+      positionTarget={targetElement}
     >
       <Popover.Target>
-        <Box
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            zIndex: 1000,
-          }}
-        />
+        <span style={{ display: 'inline-block', width: 0, height: 0 }} aria-hidden="true" />
       </Popover.Target>
 
       <Popover.Dropdown>

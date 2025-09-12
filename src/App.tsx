@@ -20,12 +20,24 @@ export default function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitKey, setSubmitKey] = useState(0);
   const classesFromStore = useAppStore((s) => s.classes);
+  const seenOnboarding = useAppStore((s) => s.seenOnboarding);
 
   useEffect(() => store.subscribe(setState), [store]);
   // Hydrate app store for new pages
   useEffect(() => {
     void useAppStore.getState().loadAll();
   }, []);
+
+  // If onboarding is pending (replay or first run) and we're not on Today, snap to Today
+  useEffect(() => {
+    if (!seenOnboarding && active !== 'today') {
+      setActive('today');
+      // Center content and avoid mid-scroll positions
+      setTimeout(() => {
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+      }, 0);
+    }
+  }, [seenOnboarding, active]);
 
   // Keyboard shortcuts: 'a' or '/' open add, Esc close, Enter submit when form open
   useEffect(() => {
