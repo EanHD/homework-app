@@ -106,6 +106,9 @@ export default function App() {
     }
   };
 
+  // Detect automation (Playwright sets navigator.webdriver). Disable onboarding in tests.
+  const isAutomation = typeof navigator !== 'undefined' && (navigator as any)?.webdriver === true;
+
   return (
     <>
       <a href="#main" className="skip-link">Skip to content</a>
@@ -122,7 +125,7 @@ export default function App() {
 
       {/* Onboarding tour overlay; disable on Settings to avoid interference */}
       <OnboardingHints
-        enabled={active !== 'settings'}
+        enabled={active !== 'settings' && !isAutomation}
         onAddSampleData={async () => {
           const addClass = useAppStore.getState().addClass;
           const addAssignment = useAppStore.getState().addAssignment;

@@ -19,6 +19,7 @@ interface OnboardingStep {
   description: string;
   target: string; // CSS selector for the target element
   placement: 'top' | 'bottom' | 'left' | 'right';
+  centered?: boolean; // If true, show this step centered on screen
 }
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -28,6 +29,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     description: 'Navigate between Today, Upcoming, and Classes using the tabs below. Each view helps you stay organized.',
     target: '[data-onboarding="navigation"]',
     placement: 'top',
+    centered: true,
   },
   {
     id: 'add-button',
@@ -53,6 +55,7 @@ export default function OnboardingHints({
   const [currentStep, setCurrentStep] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const firstButtonRef = useRef<HTMLButtonElement>(null);
+  const centerAnchorRef = useRef<HTMLSpanElement>(null);
   const reducedMotion = useReducedMotion();
   const seenOnboarding = useAppStore((s) => s.seenOnboarding);
   const markOnboardingSeen = useAppStore((s) => s.markOnboardingSeen);
@@ -109,8 +112,27 @@ export default function OnboardingHints({
     return null;
   }
 
-  // Find target element and ensure it's visible in viewport
-  const targetElement = document.querySelector(currentStepData.target) as HTMLElement | null;
+  // Render a hidden center anchor for centered steps
+  const centerAnchor = (
+    <span
+      ref={centerAnchorRef}
+      style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 0,
+        height: 0,
+        pointerEvents: 'none',
+      }}
+      aria-hidden="true"
+    />
+  );
+
+  // Find target element and ensure it's visible in viewport (unless centered overlay)
+  const targetElement = currentStepData.centered
+    ? (centerAnchorRef.current as unknown as HTMLElement | null)
+    : (document.querySelector(currentStepData.target) as HTMLElement | null);
   if (!targetElement) {
     // If target element is not found, skip to next step or complete
     setTimeout(() => {
@@ -124,9 +146,11 @@ export default function OnboardingHints({
   }
 
   // Scroll target into view and center it for clarity
-  try {
-    targetElement.scrollIntoView({ block: 'center', inline: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
-  } catch {}
+  if (!currentStepData.centered) {
+    try {
+      targetElement.scrollIntoView({ block: 'center', inline: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+    } catch {}
+  }
 
   return (
     <Popover
@@ -144,11 +168,13 @@ export default function OnboardingHints({
       // @ts-ignore Mantine supports positionTarget in v7
       positionTarget={targetElement}
     >
+      {/* Anchor for centered steps; harmlessly present otherwise */}
+      {centerAnchor}
       <Popover.Target>
         <span style={{ display: 'inline-block', width: 0, height: 0 }} aria-hidden="true" />
       </Popover.Target>
 
-      <Popover.Dropdown>
+      <Popover.Dropdown style={{ textAlign: 'left' }}>
         <Stack gap="md">
           {/* Header */}
           <Group justify="space-between" align="flex-start">
