@@ -2,6 +2,15 @@
 
 Quick validation commands for development and production environments to ensure the Homework Buddy PWA is working correctly.
 
+## ✅ 009 Quick Checklist (this repo)
+- Dev server: `npm run dev` serves at `http://localhost:5000`
+- Build preview: `npm run build && npm run preview` at `http://localhost:4173/homework-app/`
+- Pages base: HTML `<base href="/homework-app/">`; SW at `/homework-app/sw.js`
+- Runtime config: `config.json` loads at base (functionsBase + vapidPublic)
+- Enable push: Settings → “Enable push notifications” shows success + “Subscribed” badge
+- CORS preflight: see `specs/009-repair-replit-changes/cors-allowlist.md` for curl examples
+- Artifacts: capture SW registration, subscription success, and Pages site loaded screenshots
+
 ## 🏠 Development Environment Tests
 
 ### Prerequisites
@@ -11,20 +20,20 @@ npm ci
 
 # Start development server
 npm run dev
-# Server should start on http://localhost:5173
+# Server should start on http://localhost:5000
 ```
 
 ### 1. Basic Application Load
 ```bash
 # Test basic page loads (run while dev server is running)
-curl -I http://localhost:5173
+curl -I http://localhost:5000
 # Expected: HTTP/1.1 200 OK
 
-curl -I http://localhost:5173/index.html
+curl -I http://localhost:5000/index.html
 # Expected: HTTP/1.1 200 OK
 
 # Test service worker registration
-curl -I http://localhost:5173/sw.js
+curl -I http://localhost:5000/sw.js
 # Expected: HTTP/1.1 200 OK
 ```
 
@@ -32,7 +41,7 @@ curl -I http://localhost:5173/sw.js
 ```bash
 # Test CORS preflight (replace with actual Supabase URL)
 curl -X OPTIONS \
-  -H "Origin: http://localhost:5173" \
+  -H "Origin: http://localhost:5000" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type, Authorization" \
   -i \

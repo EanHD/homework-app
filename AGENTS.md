@@ -2,6 +2,20 @@
 
 This repository uses the Speckit workflow to structure feature work from specification → plan → tasks → implementation. This guide is for AI/automation agents and humans starting a new session so you can quickly orient and execute the next task correctly.
 
+## Agent Quickstart (TL;DR)
+- Detect active feature: run `scripts/check-task-prerequisites.sh --json` and/or derive from current branch `NNN-feature-name`.
+- Load context: open `specs/<feature>/spec.md` and `specs/<feature>/plan.md`.
+- Open queue: `specs/<feature>/tasks.md` is the execution list. Start at first unchecked task.
+- If `tasks.md` is missing: await the three slash commands — `/specify`, `/plan`, `/tasks` — or ask the user to run them.
+- Execute only files named by the current task; keep diffs minimal; avoid pre‑building future tasks.
+- Validate locally when possible; if blocked by environment, do static checks and report assumptions.
+- Report progress concisely and move to the next task; do not edit `tasks.md` checkboxes unless asked.
+
+## Slash Commands
+- `/specify` — Create a new feature branch and write the high‑level spec from the prompt using `scripts/create-new-feature.sh` and `templates/spec-template.md`.
+- `/plan` — Generate the implementation plan and supporting docs using `scripts/setup-plan.sh` and `templates/plan-template.md`.
+- `/tasks` — Generate `tasks.md` from the plan/design context using `scripts/check-task-prerequisites.sh` and `templates/tasks-template.md`.
+
 ## Overview
 - Phases: Spec → Plan → Tasks → Implementation.
 - Source of truth for work: `specs/<feature>/tasks.md`.
@@ -78,7 +92,7 @@ This repository uses the Speckit workflow to structure feature work from specifi
 - If a feature folder exists without `tasks.md`, reference templates in `templates/`:
   - `plan-template.md` describes Phase 2 outputs and constraints.
   - `tasks-template.md` describes how tasks are generated and formatted.
-- Ask the user to run the appropriate generation step (e.g., “/tasks”) or provide the missing document(s).
+- Ask the user to run the appropriate generation step ("/specify", then "/plan", then "/tasks") or provide the missing document(s). If the user prefers, simply await these three slash commands.
 
 ## Helpful Script
 - `scripts/check-task-prerequisites.sh` — verifies feature folder and presence of plan; `--json` outputs machine-readable summary.

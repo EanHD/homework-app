@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -41,6 +43,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -53,6 +57,10 @@ jobs:
         env:
           # Ensure correct base path for repo
           GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Disable Jekyll processing
+        run: |
+          touch dist/.nojekyll
+          echo "GitHub Pages will serve static files directly (no Jekyll processing)" > dist/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -68,4 +76,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-

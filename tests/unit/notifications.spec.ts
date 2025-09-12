@@ -6,11 +6,10 @@ declare const global: any;
 describe('notifications (SW-only)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    // Mock Notification API
-    (global as any).Notification = {
-      permission: 'granted',
-      requestPermission: vi.fn(),
-    } as any;
+    // Mock Notification API as a callable constructor so spyOn works on it
+    (global as any).Notification = function Notification(this: any) { return this; } as any;
+    (global as any).Notification.permission = 'granted';
+    (global as any).Notification.requestPermission = vi.fn();
     // Mock service worker registration
     const swReg = { showNotification: vi.fn(async () => {}) };
     (global as any).navigator = {
@@ -29,4 +28,3 @@ describe('notifications (SW-only)', () => {
     expect(newSpy).not.toHaveBeenCalled();
   });
 });
-

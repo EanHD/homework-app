@@ -7,8 +7,9 @@
  * 
  * Requirements:
  *   - Supabase functions deployed with updated CORS config
- *   - Authentication integration (JWT tokens)
  *   - Valid VAPID keys in environment
+ *   - Repo note (009): verify_jwt is disabled via inline config, so
+ *     JWT tokens are not required for these tests in this branch.
  */
 
 import { createClient } from '@supabase/supabase-js';

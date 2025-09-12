@@ -65,24 +65,13 @@ FUNCTIONS_BASE=https://tihojhmqghihckekvprj.functions.supabase.co
 TEST_USER_ID=test-user-123
 ```
 
-## Current Limitations ⚠️
+## Repo-Specific Notes (009)
 
-Due to architectural issues identified during development:
+For the 009-repair-replit-changes workflow in this repo:
 
-### 1. Authentication Required
-- All functions now require JWT authentication (`verify_jwt: true`)
-- Scripts will receive 401 errors until auth integration is complete
-- **Solution**: Integrate Supabase Auth and pass Bearer tokens
-
-### 2. CORS Configuration  
-- Functions need redeployment with updated CORS settings
-- localhost:5000 origin may still be blocked
-- **Solution**: Deploy functions with updated CORS allowlist
-
-### 3. Function-Level Config Conflicts
-- Function exports may override deno.json settings
-- JWT verification behavior may be inconsistent
-- **Solution**: Standardize configuration approach
+- Authentication: Functions export `export const config = { verify_jwt: false }`, so JWT tokens are not required for these tests.
+- CORS: Allowed origins include localhost:5000/5173/4173, GitHub Pages `https://eanhd.github.io`, and the current Replit preview domain.
+- Configuration sources: `public/config.json` provides `functionsBase` and `vapidPublic` in production; in dev you may use Vite env vars or localStorage overrides (`hb_functions_base`, `hb_vapid_public`).
 
 ## Expected Responses
 
@@ -108,11 +97,10 @@ Due to architectural issues identified during development:
 ✅ Test suite completed!
 ```
 
-### Current Error Output (Expected)
+### Example Error Output
 ```
-❌ Schedule failed (401): Unauthorized
-💡 Authentication required - JWT verification is enabled
-   Integrate Supabase Auth and pass Bearer token
+❌ Schedule failed (4xx/5xx): <message>
+💡 Check CORS allowlist and function logs (JWT not required in this branch)
 ```
 
 ## Test Notification Details

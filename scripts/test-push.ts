@@ -7,6 +7,9 @@
  *   npm run test:push -- subscriptions
  *   npm run test:push -- send <userId>
  *   npm run test:push -- trigger
+ *
+ * Repo note (009): Functions set verify_jwt: false via inline config,
+ * so auth tokens are not required for these tests in this branch.
  */
 
 import { createClient } from '@supabase/supabase-js';

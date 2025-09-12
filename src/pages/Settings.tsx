@@ -192,7 +192,18 @@ export default function SettingsPage() {
                   if (endpoint) setSubEndpoint(endpoint);
                   notifications.show({ message: reused ? 'Push subscription reused' : 'Push notifications enabled', color: 'green' });
                 } catch (e) {
-                  notifications.show({ message: 'Failed to enable push', color: 'red' });
+                  let msg = 'Failed to enable push';
+                  const m = (e && (e as any).message) ? String((e as any).message) : '';
+                  if (m.startsWith('unsupported')) {
+                    msg = 'This browser does not support Service Worker/Notifications';
+                  } else if (m === 'insecure-context') {
+                    msg = 'HTTPS required. Open the site via https:// or GitHub Pages to enable push.';
+                  } else if (m === 'permission-denied') {
+                    msg = 'Notifications permission denied.';
+                  } else if (m.includes('Missing VAPID public key')) {
+                    msg = 'Missing VAPID public key. Configure vapidPublic in config.';
+                  }
+                  notifications.show({ message: msg, color: 'red' });
                 } finally {
                   setBusy(false);
                 }

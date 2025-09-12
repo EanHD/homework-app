@@ -393,3 +393,16 @@ The mobile UI improvements have successfully resolved critical usability issues 
 - 🔧 **Zero breaking changes** to existing functionality
 
 The implemented solutions follow modern web standards and provide progressive enhancement for better mobile experiences while maintaining full compatibility with desktop and older browsers.
+
+---
+
+## Test Artifacts (009)
+
+Attach these screenshots/logs to the PR for verification:
+- Main app loaded (desktop and mobile viewport) showing header, nav, and FAB
+- Settings → Notifications with success toast and “Subscribed” badge after enabling push
+- GitHub Pages deployment page loaded at `https://eanhd.github.io/homework-app/`
+
+How to capture:
+- Use Playwright UI (`npm run test:e2e:ui`) to stage views, or capture manually in a browser
+- For mobile, set viewport to 375x667 in DevTools before capturing
