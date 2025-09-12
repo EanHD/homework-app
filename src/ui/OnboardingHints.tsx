@@ -223,8 +223,6 @@ export default function OnboardingHints({
 
 // Hook for manually triggering onboarding (for "Replay tour" feature)
 export function useOnboardingReplay() {
-  const markOnboardingSeen = useAppStore((s) => s.markOnboardingSeen);
-  
   const replayOnboarding = () => {
     // Temporarily mark as not seen to trigger onboarding
     useAppStore.setState({ seenOnboarding: false });

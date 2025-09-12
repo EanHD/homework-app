@@ -115,13 +115,22 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
       <MantineAppShell.Main 
         role="main"
         style={{
-          paddingLeft: 'env(safe-area-inset-left)',
-          paddingRight: 'env(safe-area-inset-right)', 
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)' // 80px for mobile FAB + padding
+          // Add standard app padding while respecting safe areas and mobile FAB
+          paddingLeft: 'calc(env(safe-area-inset-left) + var(--mantine-spacing-md))',
+          paddingRight: 'calc(env(safe-area-inset-right) + var(--mantine-spacing-md))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + var(--mantine-spacing-md) + 80px)'
         }}
         data-mobile-fab-compensation="true"
       >
-        {children}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 960,
+            margin: '0 auto',
+          }}
+        >
+          {children}
+        </div>
       </MantineAppShell.Main>
     </MantineAppShell>
   );

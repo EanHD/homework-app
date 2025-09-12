@@ -74,7 +74,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   async addClass(input) {
     const c: Class = { id: nanoid(), ...input };
-    const next: State = { classes: [...get().classes, c], assignments: get().assignments, preferences: {} } as unknown as State;
+    const next: State = { classes: [...get().classes, c], assignments: get().assignments, preferences: { seenOnboarding: get().seenOnboarding } } as unknown as State;
     await saveState(next);
     set({ classes: next.classes, lastChangeToken: Date.now() });
     return c;
@@ -82,7 +82,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   async updateClass(input) {
     const nextClasses = get().classes.map((c) => (c.id === input.id ? { ...c, ...input } : c));
-    const next: State = { classes: nextClasses, assignments: get().assignments, preferences: {} } as unknown as State;
+    const next: State = { classes: nextClasses, assignments: get().assignments, preferences: { seenOnboarding: get().seenOnboarding } } as unknown as State;
     await saveState(next);
     set({ classes: nextClasses, lastChangeToken: Date.now() });
   },
@@ -90,7 +90,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   async deleteClass(id) {
     const nextClasses = get().classes.filter((c) => c.id !== id);
     const nextAssignments = get().assignments.filter((a) => a.classId !== id);
-    const next: State = { classes: nextClasses, assignments: nextAssignments, preferences: {} } as unknown as State;
+    const next: State = { classes: nextClasses, assignments: nextAssignments, preferences: { seenOnboarding: get().seenOnboarding } } as unknown as State;
     await saveState(next);
     set({ classes: nextClasses, assignments: nextAssignments, lastChangeToken: Date.now() });
   },
@@ -98,7 +98,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   async addAssignment(input) {
     const a: Assignment = backfill({ id: nanoid(), completed: input.completed ?? false, ...input } as Assignment);
     const nextAssignments = [...get().assignments, a];
-    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
+    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: { seenOnboarding: get().seenOnboarding } } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
     // Schedule push notification only when a reminder is explicitly set
@@ -124,7 +124,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   async updateAssignment(input) {
     const nextAssignments = get().assignments.map((a) => (a.id === input.id ? ({ ...a, ...input } as Assignment) : a));
-    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
+    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: { seenOnboarding: get().seenOnboarding } } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
     // Reschedule if reminder explicitly set, otherwise cancel
@@ -153,7 +153,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   async deleteAssignment(id) {
     const nextAssignments = get().assignments.filter((a) => a.id !== id);
-    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
+    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: { seenOnboarding: get().seenOnboarding } } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
     // Cancel any scheduled notifications for this assignment
@@ -174,7 +174,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   async restoreAssignment(assignment) {
     const nextAssignments = [...get().assignments, backfill(assignment)];
-    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: {} } as unknown as State;
+    const next: State = { classes: get().classes, assignments: nextAssignments, preferences: { seenOnboarding: get().seenOnboarding } } as unknown as State;
     await saveState(next);
     set({ assignments: nextAssignments, lastChangeToken: Date.now() });
   },
@@ -220,7 +220,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const currentState: State = {
       classes: get().classes,
       assignments: get().assignments,
-      preferences: {}
+      preferences: { seenOnboarding: get().seenOnboarding }
     } as unknown as State;
     set({ lastUndo: currentState });
   },

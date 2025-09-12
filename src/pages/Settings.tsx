@@ -117,7 +117,9 @@ export default function SettingsPage() {
   const onClearAll = async () => {
     if (!confirm('Clear all classes and assignments? You can Undo right after.')) return;
     await captureUndo();
-    const next: State = { classes: [], assignments: [], preferences: {} } as unknown as State;
+    // Preserve onboarding preference so the tour does not unexpectedly replay
+    const seenOnboarding = useAppStore.getState().seenOnboarding;
+    const next: State = { classes: [], assignments: [], preferences: { seenOnboarding } } as unknown as State;
     await saveState(next);
     await loadAll();
     const id = `undo-clear-${Date.now()}`;

@@ -10,7 +10,6 @@ import type { State } from '@/store/types';
 import AssignmentForm from '@/ui/AssignmentForm';
 import { useAppStore } from '@/store/app';
 import { Button } from '@mantine/core';
-import dayjs from 'dayjs';
 import OnboardingHints from '@/ui/OnboardingHints';
 
 export default function App() {
@@ -109,9 +108,9 @@ export default function App() {
         </div>
       </AppShell>
 
-      {/* Onboarding tour overlay; enabled unless marked seen in store */}
+      {/* Onboarding tour overlay; disable on Settings to avoid interference */}
       <OnboardingHints
-        enabled
+        enabled={active !== 'settings'}
         onAddSampleData={async () => {
           const addClass = useAppStore.getState().addClass;
           const addAssignment = useAppStore.getState().addAssignment;
