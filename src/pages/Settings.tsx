@@ -265,10 +265,17 @@ export default function SettingsPage() {
               onClick={async () => {
                 try {
                   const res = await postSendNotifications();
-                  const text = await res?.text();
-                  console.log('[settings] send-notifications report', res?.status, text);
-                  setLastDeliverStatus(res ? `${res.status} ${String(text || '').slice(0, 120)}` : 'no-response');
-                  notifications.show({ message: `Triggered deliverer: ${res?.status}`, color: res?.ok ? 'green' : 'red' });
+                  if (res && res.ok) {
+                    const json = await res.json();
+                    console.log('[settings] send-notifications report', json);
+                    const summary = `processed=${json.processed} successes=${json.successes} errors=${json.errors} vapidLen=${json.vapidPublicLen}${json.vapidPublicHash ? ` hash=${json.vapidPublicHash}` : ''}`;
+                    setLastDeliverStatus(summary);
+                    notifications.show({ message: `Deliverer OK: ${summary}`, color: 'green' });
+                  } else {
+                    const text = await res?.text();
+                    setLastDeliverStatus(res ? `${res.status} ${String(text || '').slice(0, 120)}` : 'no-response');
+                    notifications.show({ message: `Deliverer failed: ${res?.status}`, color: 'red' });
+                  }
                 } catch {
                   notifications.show({ message: 'Failed to trigger deliverer', color: 'red' });
                 }

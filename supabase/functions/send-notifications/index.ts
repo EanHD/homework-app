@@ -89,6 +89,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Compute a short fingerprint of VAPID public for diagnostics
+    let vapidHash = '';
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(VAPID_PUBLIC);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      const bytes = Array.from(new Uint8Array(digest));
+      const hex = bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
+      vapidHash = hex.slice(0, 12);
+    } catch {}
+
     const report = {
       processed,
       successes: delivered,
@@ -98,6 +109,7 @@ Deno.serve(async (req) => {
       lastStatus,
       lastText: (lastText || '').slice(0, 200),
       vapidPublicLen: (VAPID_PUBLIC || '').length,
+      vapidPublicHash: vapidHash,
     };
     try { console.log(`[send-notifications] processed=${processed} successes=${delivered} pruned=${removed} errors=${errors}`); } catch {}
     return corsify(req, new Response(JSON.stringify(report), { status: 200, headers: { 'Content-Type': 'application/json' } }));
