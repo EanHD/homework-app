@@ -52,22 +52,29 @@ export default function SettingsPage() {
   const [perm, setPerm] = useState<NotificationPermission>(typeof Notification !== 'undefined' ? Notification.permission : 'default');
   const [subEndpoint, setSubEndpoint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [devCfg, setDevCfg] = useState<{ fb?: string; vplen?: number }>({});
+  const [diagCfg, setDiagCfg] = useState<{ fb?: string; vplen?: number }>({});
+  const [lastScheduleStatus, setLastScheduleStatus] = useState<string | null>(null);
+  const [lastDeliverStatus, setLastDeliverStatus] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      if (import.meta.env.DEV) {
-        try {
-          const rc = await getRuntimeConfig();
-          setDevCfg({ fb: rc.functionsBase, vplen: (rc.vapidPublic || '').length });
-          if (!rc.functionsBase || !rc.vapidPublic) {
-            console.warn('[settings] dev config missing', {
-              hasFunctionsBase: !!rc.functionsBase,
-              vapidPublicLen: (rc.vapidPublic || '').length,
-            });
-          }
-        } catch {}
-      }
+      try {
+        const rc = await getRuntimeConfig();
+        setDiagCfg({ fb: rc.functionsBase, vplen: (rc.vapidPublic || '').length });
+        if (!rc.functionsBase || !rc.vapidPublic) {
+          console.warn('[settings] runtime config missing', {
+            hasFunctionsBase: !!rc.functionsBase,
+            vapidPublicLen: (rc.vapidPublic || '').length,
+          });
+        }
+      } catch {}
+      // Initialize subscription endpoint and permission
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager.getSubscription();
+        setSubEndpoint(sub?.endpoint ?? null);
+        setPerm(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+      } catch {}
     })();
   }, []);
 
@@ -164,11 +171,9 @@ export default function SettingsPage() {
       <Card withBorder radius="md" p="md">
         <SectionTitle>Notifications</SectionTitle>
         <Stack>
-          {import.meta.env.DEV && (
-            <Text size="xs" c="dimmed">
-              Dev Config: functionsBase={<code>{devCfg.fb || '(missing)'}</code>} · vapidPublic len={devCfg.vplen || 0}
-            </Text>
-          )}
+          <Text size="xs" c="dimmed">
+            Diagnostics: functionsBase={<code>{diagCfg.fb || '(missing)'}</code>} · vapidPublic len={diagCfg.vplen || 0}
+          </Text>
           <Switch
             checked={notificationsEnabled}
             onChange={(e) => setNotificationsEnabled(e.currentTarget.checked)}
@@ -241,6 +246,7 @@ export default function SettingsPage() {
                   const id = 'test-notification';
                   const { withBase } = await import('@/base');
                   const res = await scheduleReminder({ userId: getOrCreateUserId(), assignmentId: id, title: 'Test notification', body: 'This is a test', sendAt: new Date(now).toISOString(), url: withBase('#/main') });
+                  setLastScheduleStatus(res ? `${res.status}` : 'no-response');
                   if (!res || !res.ok) {
                     notifications.show({ message: 'Failed to schedule test', color: 'red' });
                   } else {
@@ -261,6 +267,7 @@ export default function SettingsPage() {
                   const res = await postSendNotifications();
                   const text = await res?.text();
                   console.log('[settings] send-notifications report', res?.status, text);
+                  setLastDeliverStatus(res ? `${res.status} ${String(text || '').slice(0, 120)}` : 'no-response');
                   notifications.show({ message: `Triggered deliverer: ${res?.status}`, color: res?.ok ? 'green' : 'red' });
                 } catch {
                   notifications.show({ message: 'Failed to trigger deliverer', color: 'red' });
@@ -314,6 +321,22 @@ export default function SettingsPage() {
           <Alert icon={<IconAlertCircle size={16} />} variant="light" color="gray">
             Reminders require the app to be open due to platform limitations. Quiet hours suppress reminders that would occur within the selected window, including across midnight.
           </Alert>
+        </Stack>
+      </Card>
+
+      {/* Diagnostics */}
+      <Card withBorder radius="md" p="md">
+        <SectionTitle>Diagnostics</SectionTitle>
+        <Stack gap="xs">
+          <Text size="sm">Functions base: <code>{diagCfg.fb || '(missing)'}</code></Text>
+          <Text size="sm">VAPID public length: {diagCfg.vplen || 0}</Text>
+          <Text size="sm">Subscription endpoint: <code>{subEndpoint ? `${subEndpoint.slice(0, 48)}...` : '(none)'}</code></Text>
+          {lastScheduleStatus && (
+            <Text size="sm">Last schedule: {lastScheduleStatus}</Text>
+          )}
+          {lastDeliverStatus && (
+            <Text size="sm">Last deliver: {lastDeliverStatus}</Text>
+          )}
         </Stack>
       </Card>
 

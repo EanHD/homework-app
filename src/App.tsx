@@ -11,6 +11,7 @@ import AssignmentForm from '@/ui/AssignmentForm';
 import { useAppStore } from '@/store/app';
 import { Button } from '@mantine/core';
 import OnboardingHints from '@/ui/OnboardingHints';
+import IosInstallHint from '@/ui/IosInstallHint';
 
 export default function App() {
   const store = useMemo(() => createStore(), []);
@@ -119,6 +120,7 @@ export default function App() {
         title={undefined}
       >
         <div id="main" role="main">
+          <IosInstallHint />
           {renderPage()}
         </div>
       </AppShell>

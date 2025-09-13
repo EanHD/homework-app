@@ -60,19 +60,31 @@ sw.addEventListener('fetch', (event) => {
 
 // Handle push notification
 sw.addEventListener('push', (event) => {
-  if (!event.data) return;
+  // Some platforms (or our server) may send an empty push to trigger SW logic.
+  // Always show a reasonable default notification when no payload is provided.
+  let payload: any = null;
+  try {
+    // json() is synchronous in PushMessageData
+    payload = event.data ? event.data.json?.() ?? null : null;
+  } catch {
+    payload = null;
+  }
 
-  const data = event.data.json();
+  const basePath = new URL(sw.registration.scope).pathname; // e.g. '/homework-app/' or '/'
+  const title = (payload && (payload.title as string)) || 'Homework Buddy';
+  const body = (payload && (payload.body as string)) || 'You have a homework reminder.';
+  const tag = (payload && (payload.tag as string)) || 'homework';
+
   const options: NotificationOptions = {
-    body: data.body || 'Homework reminder',
-    icon: new URL(sw.registration.scope).pathname + 'icon.svg',
-    badge: new URL(sw.registration.scope).pathname + 'maskable.svg',
-    tag: data.tag || 'homework',
+    body,
+    icon: basePath + 'icon.svg',
+    badge: basePath + 'maskable.svg',
+    tag,
     requireInteraction: false,
-    data: data.data || {},
+    data: (payload && (payload.data as any)) || {},
   };
 
-  event.waitUntil(sw.registration.showNotification(data.title || 'Homework Buddy', options));
+  event.waitUntil(sw.registration.showNotification(title, options));
 });
 
 // Handle notification click
