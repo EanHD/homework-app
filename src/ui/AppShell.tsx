@@ -102,7 +102,10 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
                 leftSection={<item.icon size={18} />}
                 active={active === item.key}
                 aria-current={active === item.key ? 'page' : undefined}
-                onClick={() => {
+                component="a"
+                href="#"
+                onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                  e.preventDefault();
                   onNavigate(item.key);
                   close();
                 }}
