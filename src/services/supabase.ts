@@ -21,8 +21,11 @@ let client: SupabaseClient | null = null;
 export async function getSupabaseClient(): Promise<SupabaseClient> {
   if (client) return client;
   const cfg = await getRuntimeConfig();
-  const url = (cfg as any).functionsBase || (import.meta as any)?.env?.VITE_SUPABASE_URL;
-  const anon = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY;
+  
+  // Try to get Supabase URL from config.json first, then fall back to env
+  const url = (cfg as any).supabaseUrl || (import.meta as any)?.env?.VITE_SUPABASE_URL;
+  const anon = (cfg as any).supabaseAnonKey || (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY;
+  
   if (!url || !anon) {
     throw new Error('Missing Supabase runtime config: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
   }
