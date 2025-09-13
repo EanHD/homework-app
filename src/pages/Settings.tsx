@@ -344,6 +344,24 @@ export default function SettingsPage() {
           {lastDeliverStatus && (
             <Text size="sm">Last deliver: {lastDeliverStatus}</Text>
           )}
+          <Group gap="sm" mt="xs">
+            <Button
+              size="xs"
+              variant="default"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('hb_vapid_public');
+                  localStorage.removeItem('hb_functions_base');
+                  notifications.show({ message: 'Config overrides cleared. Reloading...', color: 'blue' });
+                  setTimeout(() => location.reload(), 500);
+                } catch {
+                  notifications.show({ message: 'Failed to clear overrides', color: 'red' });
+                }
+              }}
+            >
+              Reset config overrides
+            </Button>
+          </Group>
         </Stack>
       </Card>
 

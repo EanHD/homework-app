@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
     const statusCounts: Record<string, number> = {};
     let lastStatus = 0;
     let lastText = '';
+    let lastErrorMsg = '';
 
     for (const row of (rows || []) as SchedRow[]) {
       const { data: subs } = await supabase
@@ -76,8 +77,9 @@ Deno.serve(async (req) => {
           } else {
             errors++;
           }
-        } catch (_e) {
+        } catch (e) {
           errors++;
+          try { lastErrorMsg = e instanceof Error ? e.message : String(e); } catch {}
         }
       }
 
@@ -110,6 +112,7 @@ Deno.serve(async (req) => {
       lastText: (lastText || '').slice(0, 200),
       vapidPublicLen: (VAPID_PUBLIC || '').length,
       vapidPublicHash: vapidHash,
+      lastError: lastErrorMsg ? String(lastErrorMsg).slice(0, 200) : undefined,
     };
     try { console.log(`[send-notifications] processed=${processed} successes=${delivered} pruned=${removed} errors=${errors}`); } catch {}
     return corsify(req, new Response(JSON.stringify(report), { status: 200, headers: { 'Content-Type': 'application/json' } }));

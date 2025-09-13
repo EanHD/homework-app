@@ -5,6 +5,8 @@
  * Example: npx tsx scripts/verify-vapid.ts https://eanhd.github.io/homework-app/config.json https://<project>.functions.supabase.co
  */
 
+import { webcrypto as nodeCrypto } from 'node:crypto';
+
 async function main() {
   const [, , configUrl, functionsBase] = process.argv;
   if (!configUrl || !functionsBase) {
@@ -12,8 +14,9 @@ async function main() {
     process.exit(1);
   }
 
+  const cacheBuster = `${configUrl}${configUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
   console.log('🔧 Fetching app config:', configUrl);
-  const resCfg = await fetch(configUrl, { cache: 'no-store' });
+  const resCfg = await fetch(cacheBuster, { cache: 'no-store' });
   if (!resCfg.ok) {
     console.error('❌ Failed to fetch config.json:', resCfg.status);
     process.exit(1);
@@ -40,7 +43,11 @@ async function main() {
 
   // Compute simple hash for app key to compare prefix with server (diagnostic only)
   const enc = new TextEncoder();
-  const digest = await crypto.subtle.digest('SHA-256', enc.encode(vapidPublic));
+  const subtle = (globalThis as any).crypto?.subtle || nodeCrypto.subtle;
+  if (!subtle) {
+    throw new Error('WebCrypto not available');
+  }
+  const digest = await subtle.digest('SHA-256', enc.encode(vapidPublic));
   const bytes = Array.from(new Uint8Array(digest));
   const hex = bytes.map(b => b.toString(16).padStart(2, '0')).join('');
   const appHash = hex.slice(0, 12);
@@ -54,4 +61,3 @@ async function main() {
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
-
