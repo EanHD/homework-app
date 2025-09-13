@@ -4,16 +4,19 @@ import TodayPage from '@/pages/Today';
 import UpcomingPage from '@/pages/Upcoming';
 import ClassesPage from '@/pages/Classes';
 import SettingsPage from '@/pages/Settings';
+import LoginPage from '@/pages/Login';
 import { createStore } from '@/store/store';
 import type { NavKey } from '@/ui/AppShell';
 import type { State } from '@/store/types';
 import AssignmentForm from '@/ui/AssignmentForm';
 import { useAppStore } from '@/store/app';
-import { Button } from '@mantine/core';
+import { useAuth } from '@/hooks/useAuth';
+import { Button, Center, Loader, Stack, Text } from '@mantine/core';
 import OnboardingHints from '@/ui/OnboardingHints';
 import IosInstallHint from '@/ui/IosInstallHint';
 
 export default function App() {
+  const { user, loading: authLoading } = useAuth();
   const store = useMemo(() => createStore(), []);
   const [state, setState] = useState<State>(store.getState());
   const [active, setActive] = useState<NavKey>('today');
@@ -22,6 +25,23 @@ export default function App() {
   const [submitKey, setSubmitKey] = useState(0);
   const classesFromStore = useAppStore((s) => s.classes);
   const seenOnboarding = useAppStore((s) => s.seenOnboarding);
+
+  // Show loading screen while checking authentication
+  if (authLoading) {
+    return (
+      <Center style={{ height: '100vh' }}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" />
+          <Text c="dimmed">Loading...</Text>
+        </Stack>
+      </Center>
+    );
+  }
+
+  // Show login page if user is not authenticated
+  if (!user) {
+    return <LoginPage />;
+  }
 
   useEffect(() => store.subscribe(setState), [store]);
   // Hydrate app store for new pages

@@ -9,6 +9,9 @@ import {
   Badge,
   ScrollArea,
   Stack,
+  Divider,
+  Text,
+  Avatar,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import dayjs from 'dayjs';
@@ -18,8 +21,11 @@ import {
   IconBooks,
   IconPlus,
   IconSettings,
+  IconLogout,
+  IconUser,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 export type NavKey = 'today' | 'upcoming' | 'classes' | 'settings';
 
@@ -40,8 +46,14 @@ const navItems: { key: NavKey; label: string; icon: React.FC<any> }[] = [
 
 export default function AppShell({ active, onNavigate, onAdd, children, title }: AppShellProps) {
   const [opened, { toggle, close }] = useDisclosure(false);
+  const { user, signOut } = useAuth();
   const nowChip = useMemo(() => dayjs().format('ddd, MMM D'), []);
   const pageTitle = title ?? navItems.find((n) => n.key === active)?.label ?? 'Homework Buddy';
+
+  const handleSignOut = async () => {
+    await signOut();
+    close();
+  };
 
   return (
     <MantineAppShell
@@ -94,23 +106,54 @@ export default function AppShell({ active, onNavigate, onAdd, children, title }:
 
       <MantineAppShell.Navbar component="nav" aria-label="Primary" p="sm" data-onboarding="navigation">
         <ScrollArea type="never" style={{ height: '100%' }}>
-          <Stack gap="xs">
-            {navItems.map((item) => (
+          <Stack gap="xs" style={{ height: '100%' }}>
+            <Stack gap="xs" style={{ flex: 1 }}>
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.key}
+                  label={item.label}
+                  leftSection={<item.icon size={18} />}
+                  active={active === item.key}
+                  aria-current={active === item.key ? 'page' : undefined}
+                  component="a"
+                  href="#"
+                  onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                    e.preventDefault();
+                    onNavigate(item.key);
+                    close();
+                  }}
+                />
+              ))}
+            </Stack>
+
+            {/* User info and logout at bottom */}
+            <Stack gap="xs">
+              <Divider />
+              <Group gap="xs" px="xs">
+                <Avatar size="sm" radius="xl">
+                  <IconUser size={16} />
+                </Avatar>
+                <Stack gap={0} style={{ flex: 1 }}>
+                  <Text size="sm" fw={500} truncate>
+                    {user?.email || 'Signed In'}
+                  </Text>
+                  <Text size="xs" c="dimmed" truncate>
+                    {user?.user_metadata?.full_name || 'User'}
+                  </Text>
+                </Stack>
+              </Group>
               <NavLink
-                key={item.key}
-                label={item.label}
-                leftSection={<item.icon size={18} />}
-                active={active === item.key}
-                aria-current={active === item.key ? 'page' : undefined}
+                label="Sign Out"
+                leftSection={<IconLogout size={18} />}
                 component="a"
                 href="#"
                 onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                   e.preventDefault();
-                  onNavigate(item.key);
-                  close();
+                  handleSignOut();
                 }}
+                c="red"
               />
-            ))}
+            </Stack>
           </Stack>
         </ScrollArea>
       </MantineAppShell.Navbar>

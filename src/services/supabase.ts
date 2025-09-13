@@ -77,7 +77,7 @@ export class AuthService {
       }
 
       return { 
-        session: data.session as AuthSession, 
+        session: data.session ? data.session as AuthSession : null, 
         user: data.user, 
         error: null 
       }
@@ -139,7 +139,7 @@ export class AuthService {
       }
 
       return { 
-        session: session as AuthSession, 
+        session: session ? session as AuthSession : null, 
         user: session?.user || null, 
         error: null 
       }
@@ -179,7 +179,7 @@ export class AuthService {
   static async onAuthStateChange(callback: (session: AuthSession | null, user: User | null) => void) {
     const s = await getSupabaseClient();
     return s.auth.onAuthStateChange((event, session) => {
-      callback(session as AuthSession, session?.user || null)
+      callback(session ? session as AuthSession : null, session?.user || null)
     })
   }
 }
