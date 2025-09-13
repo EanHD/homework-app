@@ -1,20 +1,48 @@
 /**
  * Supabase Edge Function: subscribe (Supabase CLI deploy path)
- * @verify_jwt false
+ * Handles both authenticated and anonymous push subscriptions
  */
-export const config = { verify_jwt: false } as const;
-// Supabase Edge Function: subscribe (Supabase CLI deploy path)
-// POST { userId: string, endpoint: string, keys: { p256dh: string, auth: string } }
-// DELETE { userId: string, endpoint: string }
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsify, preflight } from "../_shared/cors.ts";
 
-type Payload = {
-  userId?: string;
-  endpoint?: string;
-  keys?: { p256dh?: string; auth?: string };
+type SubscriptionPayload = {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
 };
+
+type RequestPayload = {
+  subscription: SubscriptionPayload;
+  user_id?: string; // Only present when user is authenticated
+};
+
+async function verifyAuthAndExtractUserId(req: Request): Promise<{ userId: string | null; error?: string }> {
+  const authHeader = req.headers.get('authorization');
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { userId: null }; // Anonymous request is allowed
+  }
+
+  const token = authHeader.substring(7);
+  
+  const PROJECT_URL = Deno.env.get('PROJECT_URL');
+  const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY');
+  if (!PROJECT_URL || !SERVICE_ROLE_KEY) {
+    return { userId: null, error: 'Missing Supabase config' };
+  }
+
+  try {
+    const supabase = createClient(PROJECT_URL, SERVICE_ROLE_KEY);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return { userId: null, error: 'Invalid or expired token' };
+    }
+
+    return { userId: user.id };
+  } catch (e) {
+    return { userId: null, error: 'Token verification failed' };
+  }
+}
 
 Deno.serve(async (req) => {
   const pf = preflight(req);
@@ -33,50 +61,98 @@ Deno.serve(async (req) => {
 
   try {
     if (req.method === 'DELETE') {
-      const body = (await req.json()) as { userId?: string; endpoint?: string };
-      if (!body.endpoint || !body.userId) return corsify(req, new Response('Invalid input', { status: 400 }));
-      await supabase.from('push_subscriptions').delete().match({ endpoint: body.endpoint, user_id: body.userId });
-      try { console.log('[subscribe][DELETE]', { user: body.userId, endpoint: (body.endpoint || '').slice(0, 24) + '...' }); } catch {}
-      return corsify(req, new Response(JSON.stringify({ ok: true, action: 'deleted' }), { status: 200 }));
+      const { userId, error: authError } = await verifyAuthAndExtractUserId(req);
+      
+      const body = (await req.json()) as { endpoint?: string };
+      if (!body.endpoint) {
+        return corsify(req, new Response(JSON.stringify({ success: false, error: 'Missing endpoint' }), { status: 400 }));
+      }
+
+      // For DELETE, if user is authenticated, verify they own the subscription
+      if (userId) {
+        await supabase.from('push_subscriptions').delete().match({ 
+          endpoint: body.endpoint, 
+          user_id: userId 
+        });
+      } else {
+        // Anonymous delete - only allow if no user_id is set
+        await supabase.from('push_subscriptions').delete().match({ 
+          endpoint: body.endpoint, 
+          user_id: null 
+        });
+      }
+      
+      console.log('[subscribe][DELETE]', { 
+        user: userId || 'anonymous', 
+        endpoint: body.endpoint.slice(0, 24) + '...' 
+      });
+      
+      return corsify(req, new Response(JSON.stringify({ success: true, message: 'Subscription deleted' }), { status: 200 }));
     }
 
-    const ct = req.headers.get('content-type') || '';
-    const origin = req.headers.get('origin') || '';
-    let body: Payload | null = null;
+    // Handle POST request
+    const { userId, error: authError } = await verifyAuthAndExtractUserId(req);
+    
+    let body: RequestPayload;
     try {
-      body = (await req.json()) as Payload;
+      body = (await req.json()) as RequestPayload;
     } catch (e) {
-      try { console.log('[subscribe] JSON parse error', String(e)); } catch {}
-      return corsify(req, new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), { status: 400 }));
+      console.log('[subscribe] JSON parse error', String(e));
+      return corsify(req, new Response(JSON.stringify({ success: false, error: 'Invalid JSON' }), { status: 400 }));
     }
-    if (!body?.userId || !body.endpoint || !body.keys?.p256dh || !body.keys?.auth) {
-      try { console.log('[subscribe] Invalid input', { origin, ct, body }); } catch {}
-      return corsify(req, new Response(JSON.stringify({ ok: false, error: 'Invalid input' }), { status: 400 }));
+
+    // Validate request structure
+    if (!body?.subscription?.endpoint || !body.subscription?.keys?.p256dh || !body.subscription?.keys?.auth) {
+      console.log('[subscribe] Invalid subscription payload', { body });
+      return corsify(req, new Response(JSON.stringify({ success: false, error: 'Invalid subscription payload' }), { status: 400 }));
+    }
+
+    // If user_id is provided in payload, verify it matches the authenticated user
+    if (body.user_id) {
+      if (!userId) {
+        return corsify(req, new Response(JSON.stringify({ success: false, error: 'Authentication required when user_id provided' }), { status: 401 }));
+      }
+      if (body.user_id !== userId) {
+        return corsify(req, new Response(JSON.stringify({ success: false, error: 'user_id does not match authenticated user' }), { status: 403 }));
+      }
     }
 
     const row = {
-      user_id: body.userId,
-      endpoint: body.endpoint,
-      p256dh: body.keys.p256dh,
-      auth: body.keys.auth,
+      user_id: userId, // Use the verified user ID from JWT, or null for anonymous
+      endpoint: body.subscription.endpoint,
+      p256dh: body.subscription.keys.p256dh,
+      auth: body.subscription.keys.auth,
     };
-    await supabase.from('push_subscriptions').delete().eq('user_id', body.userId);
+
+    // Delete existing subscription for this user/endpoint combination
+    if (userId) {
+      await supabase.from('push_subscriptions').delete().eq('user_id', userId);
+    } else {
+      // For anonymous, delete by endpoint only
+      await supabase.from('push_subscriptions').delete().eq('endpoint', body.subscription.endpoint);
+    }
+
     const { error } = await supabase.from('push_subscriptions').insert(row);
     if (error) {
-      try { console.log('[subscribe] insert error', { message: error.message }); } catch {}
-      return corsify(req, new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 }));
+      console.log('[subscribe] insert error', { message: error.message });
+      return corsify(req, new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 }));
     }
-    try {
-      console.log('[subscribe][POST] saved', {
-        user: body.userId,
-        endpoint: body.endpoint.slice(0, 32) + '...',
-        origin,
-      });
-    } catch {}
-    return corsify(req, new Response(JSON.stringify({ ok: true, action: 'replaced', userId: body.userId }), { status: 200 }));
+
+    console.log('[subscribe][POST] saved', {
+      user: userId || 'anonymous',
+      endpoint: body.subscription.endpoint.slice(0, 32) + '...',
+      origin: req.headers.get('origin') || '',
+    });
+
+    return corsify(req, new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Subscription saved',
+      subscription_id: body.subscription.endpoint 
+    }), { status: 200 }));
+
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'unknown';
-    try { console.log('[subscribe] unhandled error', msg); } catch {}
-    return corsify(req, new Response(JSON.stringify({ ok: false, error: msg }), { status: 500 }));
+    console.log('[subscribe] unhandled error', msg);
+    return corsify(req, new Response(JSON.stringify({ success: false, error: msg }), { status: 500 }));
   }
 });

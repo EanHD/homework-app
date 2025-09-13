@@ -84,6 +84,9 @@ test.describe('Push Notification Subscription Flow', () => {
     // Wait for settings page to load
     await expect(page.getByText('Notifications')).toBeVisible();
 
+  // Diagnostics should surface functions base and vapid length (non-flaky marker)
+  await expect(page.getByText(/Functions base:/i)).toBeVisible();
+
     // Find and click the enable push notifications button
     const enableButton = page.getByRole('button', { name: /enable push notifications/i });
     await expect(enableButton).toBeVisible();

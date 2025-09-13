@@ -114,7 +114,20 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const { getOrCreateUserId } = await import('@/utils/userId');
         const { withBase } = await import('@/base');
         const url = withBase(`#/assignment/${a.id}`);
-        await postSchedule({ userId: getOrCreateUserId(), assignmentId: a.id, title: a.title, body: '', sendAt, url });
+        try {
+          const res = await postSchedule({ userId: getOrCreateUserId(), assignmentId: a.id, title: a.title, body: '', sendAt, url });
+          if (!res || !res.ok) {
+            try {
+              const { notifications } = await import('@mantine/notifications');
+              notifications.show({ message: 'Failed to schedule reminder (server)', color: 'red' });
+            } catch {}
+          }
+        } catch {
+          try {
+            const { notifications } = await import('@mantine/notifications');
+            notifications.show({ message: 'Failed to schedule reminder (network)', color: 'red' });
+          } catch {}
+        }
       }
     } catch {
       // ignore scheduling errors
@@ -142,9 +155,35 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const sendAtMs = new Date(updated.dueAt).getTime() - offsetMin * 60_000;
         const sendAt = new Date(Math.max(sendAtMs, Date.now())).toISOString();
         const url = withBase(`#/assignment/${updated.id}`);
-        await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, title: updated.title, body: '', sendAt, url });
+        try {
+          const res = await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, title: updated.title, body: '', sendAt, url });
+          if (!res || !res.ok) {
+            try {
+              const { notifications } = await import('@mantine/notifications');
+              notifications.show({ message: 'Failed to reschedule reminder (server)', color: 'red' });
+            } catch {}
+          }
+        } catch {
+          try {
+            const { notifications } = await import('@mantine/notifications');
+            notifications.show({ message: 'Failed to reschedule reminder (network)', color: 'red' });
+          } catch {}
+        }
       } else {
-        await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, cancel: true });
+        try {
+          const res = await postSchedule({ userId: getOrCreateUserId(), assignmentId: updated.id, cancel: true });
+          if (!res || !res.ok) {
+            try {
+              const { notifications } = await import('@mantine/notifications');
+              notifications.show({ message: 'Failed to cancel scheduled reminder (server)', color: 'red' });
+            } catch {}
+          }
+        } catch {
+          try {
+            const { notifications } = await import('@mantine/notifications');
+            notifications.show({ message: 'Failed to cancel scheduled reminder (network)', color: 'red' });
+          } catch {}
+        }
       }
     } catch {
       // ignore scheduling errors
@@ -160,7 +199,20 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     try {
       const { postSchedule } = await import('@/services/pushApi');
       const { getOrCreateUserId } = await import('@/utils/userId');
-      await postSchedule({ userId: getOrCreateUserId(), assignmentId: id, cancel: true });
+      try {
+        const res = await postSchedule({ userId: getOrCreateUserId(), assignmentId: id, cancel: true });
+        if (!res || !res.ok) {
+          try {
+            const { notifications } = await import('@mantine/notifications');
+            notifications.show({ message: 'Failed to cancel scheduled reminder (server)', color: 'red' });
+          } catch {}
+        }
+      } catch {
+        try {
+          const { notifications } = await import('@mantine/notifications');
+          notifications.show({ message: 'Failed to cancel scheduled reminder (network)', color: 'red' });
+        } catch {}
+      }
     } catch {
       // ignore scheduling errors
     }
