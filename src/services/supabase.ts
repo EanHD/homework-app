@@ -19,19 +19,13 @@ export interface AuthResponse {
 let client: SupabaseClient | null = null;
 
 export async function getSupabaseClient(): Promise<SupabaseClient> {
-  if (client) {
-    console.log('getSupabaseClient: returning existing client')
-    return client;
-  }
+  if (client) return client;
   
-  console.log('getSupabaseClient: creating new client...')
   const cfg = await getRuntimeConfig();
   
   // Try to get Supabase URL from config.json first, then fall back to env
   const url = (cfg as any).supabaseUrl || (import.meta as any)?.env?.VITE_SUPABASE_URL;
   const anon = (cfg as any).supabaseAnonKey || (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY;
-  
-  console.log('getSupabaseClient: config loaded', { hasUrl: !!url, hasAnon: !!anon })
   
   if (!url || !anon) {
     throw new Error('Missing Supabase runtime config: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
@@ -47,7 +41,6 @@ export async function getSupabaseClient(): Promise<SupabaseClient> {
     }
   });
   
-  console.log('getSupabaseClient: client created successfully')
   return client;
 }
 

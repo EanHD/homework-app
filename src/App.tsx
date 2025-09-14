@@ -43,7 +43,10 @@ export default function App() {
     return <LoginPage />;
   }
 
-  useEffect(() => store.subscribe(setState), [store]);
+  useEffect(() => {
+    const unsubscribe = store.subscribe(setState);
+    return unsubscribe;
+  }, []); // Remove store from dependencies - it's stable from useMemo
   // Hydrate app store for new pages
   useEffect(() => {
     void useAppStore.getState().loadAll();
