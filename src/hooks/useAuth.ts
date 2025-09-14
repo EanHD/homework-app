@@ -17,43 +17,31 @@ export function useAuth(): UseAuthReturn {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let mounted = true;
-    let subscription: any = null;
-
-    const initAuth = async () => {
+    console.log('useAuth: effect running')
+    
+    // Simple initial session check without listener for now
+    const checkSession = async () => {
       try {
-        // Get initial session
+        console.log('useAuth: checking session...')
         const { session, user, error } = await AuthService.getSession()
-        if (mounted && !error) {
-          setSession(session)
-          setUser(user)
-        }
-
-        // Set up auth listener
-        const { data } = await AuthService.onAuthStateChange((session, user) => {
-          if (mounted) {
-            setSession(session)
-            setUser(user)
-          }
-        })
-        subscription = data.subscription
-
+        
+        console.log('useAuth: session result:', { hasSession: !!session, hasUser: !!user, error })
+        
+        setSession(session)
+        setUser(user)
+        setLoading(false)
       } catch (error) {
-        console.error('Error initializing auth:', error)
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
+        console.error('useAuth: error checking session:', error)
+        setLoading(false)
       }
     }
 
-    initAuth()
+    checkSession()
 
-    return () => {
-      mounted = false
-      subscription?.unsubscribe()
-    }
-  }, []) // Empty dependency array is correct here
+    // TODO: Re-enable auth listener once infinite loop is fixed
+    // For now, just do initial check
+    
+  }, []) // Empty dependency array
 
   const signInWithMagicLink = async (email: string) => {
     setLoading(true)
