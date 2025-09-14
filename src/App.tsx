@@ -49,10 +49,13 @@ export default function App() {
   }, []); // Remove store from dependencies - it's stable from useMemo
   // Hydrate app store for new pages
   useEffect(() => {
+    console.log('App: loadAll effect running')
     void useAppStore.getState().loadAll();
   }, []);
 
   // If onboarding is pending (replay or first run) and we're not on Today, snap to Today
+  // TEMPORARILY DISABLED for debugging
+  /*
   useEffect(() => {
     if (!seenOnboarding && active !== 'today') {
       setActive('today');
@@ -62,8 +65,11 @@ export default function App() {
       }, 0);
     }
   }, [seenOnboarding, active]);
+  */
 
   // Keyboard shortcuts: 'a' or '/' open add, Esc close, Enter submit when form open
+  // TEMPORARILY DISABLED for debugging
+  /*
   useEffect(() => {
     const isTypingTarget = (el: EventTarget | null) => {
       if (!(el instanceof HTMLElement)) return false;
@@ -99,6 +105,7 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [formOpen]);
+  */
 
   const renderPage = () => {
     switch (active) {
