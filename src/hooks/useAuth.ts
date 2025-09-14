@@ -17,43 +17,53 @@ export function useAuth(): UseAuthReturn {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true;
+    let subscription: any = null;
+
     // Get initial session
     const getInitialSession = async () => {
       try {
         const { session, user, error } = await AuthService.getSession()
-        if (!error) {
+        if (mounted && !error) {
           setSession(session)
           setUser(user)
         }
       } catch (error) {
         console.error('Error getting initial session:', error)
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    // Listen for auth state changes
+    const setupAuthListener = async () => {
+      try {
+        const { data } = await AuthService.onAuthStateChange((session, user) => {
+          if (mounted) {
+            setSession(session)
+            setUser(user)
+            setLoading(false)
+          }
+        })
+        subscription = data.subscription
+      } catch (error) {
+        console.error('Error setting up auth listener:', error)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
 
     getInitialSession()
-
-    // Listen for auth state changes
-    const setupAuthListener = async () => {
-      const { data: { subscription } } = await AuthService.onAuthStateChange((session, user) => {
-        setSession(session)
-        setUser(user)
-        setLoading(false)
-      })
-
-      return subscription
-    }
-
-    let subscription: any = null
-    setupAuthListener().then(sub => {
-      subscription = sub
-    })
+    setupAuthListener()
 
     return () => {
+      mounted = false
       subscription?.unsubscribe()
     }
-  }, [])
+  }, []) // Empty dependency array is correct here
 
   const signInWithMagicLink = async (email: string) => {
     setLoading(true)

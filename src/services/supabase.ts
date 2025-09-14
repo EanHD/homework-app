@@ -185,9 +185,10 @@ export class AuthService {
    */
   static async onAuthStateChange(callback: (session: AuthSession | null, user: User | null) => void) {
     const s = await getSupabaseClient();
-    return s.auth.onAuthStateChange((event, session) => {
+    const { data } = s.auth.onAuthStateChange((event, session) => {
       callback(session ? session as AuthSession : null, session?.user || null)
     })
+    return { data }
   }
 }
 
