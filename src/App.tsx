@@ -26,32 +26,19 @@ export default function App() {
   const classesFromStore = useAppStore((s) => s.classes);
   const seenOnboarding = useAppStore((s) => s.seenOnboarding);
 
-  // Show loading screen while checking authentication
-  if (authLoading) {
-    return (
-      <Center style={{ height: '100vh' }}>
-        <Stack align="center" gap="md">
-          <Loader size="lg" />
-          <Text c="dimmed">Loading...</Text>
-        </Stack>
-      </Center>
-    );
-  }
-
-  // Show login page if user is not authenticated
-  if (!user) {
-    return <LoginPage />;
-  }
-
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   useEffect(() => {
     const unsubscribe = store.subscribe(setState);
     return unsubscribe;
   }, []); // Remove store from dependencies - it's stable from useMemo
-  // Hydrate app store for new pages
+
+  // Hydrate app store for new pages - only when user is logged in
   useEffect(() => {
-    console.log('App: loadAll effect running')
-    void useAppStore.getState().loadAll();
-  }, []);
+    if (user) {
+      console.log('App: loadAll effect running')
+      void useAppStore.getState().loadAll();
+    }
+  }, [user]); // Run when user changes
 
   // If onboarding is pending (replay or first run) and we're not on Today, snap to Today
   // TEMPORARILY DISABLED for debugging
@@ -106,6 +93,23 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [formOpen]);
   */
+
+  // Show loading screen while checking authentication
+  if (authLoading) {
+    return (
+      <Center style={{ height: '100vh' }}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" />
+          <Text c="dimmed">Loading...</Text>
+        </Stack>
+      </Center>
+    );
+  }
+
+  // Show login page if user is not authenticated
+  if (!user) {
+    return <LoginPage />;
+  }
 
   const renderPage = () => {
     switch (active) {
