@@ -38,7 +38,9 @@ export async function signInWithOtp(email: string) {
   return s.auth.signInWithOtp({ 
     email,
     options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`
+      emailRedirectTo: window.location.origin.includes('github.io') 
+        ? `${window.location.origin}/homework-app/`
+        : `${window.location.origin}/`
     }
   });
 }
@@ -48,7 +50,9 @@ export async function signInWithOAuth(provider: 'google' | 'apple') {
   return s.auth.signInWithOAuth({ 
     provider,
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`
+      redirectTo: window.location.origin.includes('github.io') 
+        ? `${window.location.origin}/homework-app/`
+        : `${window.location.origin}/`
     }
   });
 }
