@@ -20,16 +20,26 @@ export function useAuth(): UseAuthReturn {
     let mounted = true;
     let subscription: any = null;
 
-    // Get initial session
-    const getInitialSession = async () => {
+    const initAuth = async () => {
       try {
+        // Get initial session
         const { session, user, error } = await AuthService.getSession()
         if (mounted && !error) {
           setSession(session)
           setUser(user)
         }
+
+        // Set up auth listener
+        const { data } = await AuthService.onAuthStateChange((session, user) => {
+          if (mounted) {
+            setSession(session)
+            setUser(user)
+          }
+        })
+        subscription = data.subscription
+
       } catch (error) {
-        console.error('Error getting initial session:', error)
+        console.error('Error initializing auth:', error)
       } finally {
         if (mounted) {
           setLoading(false)
@@ -37,27 +47,7 @@ export function useAuth(): UseAuthReturn {
       }
     }
 
-    // Listen for auth state changes
-    const setupAuthListener = async () => {
-      try {
-        const { data } = await AuthService.onAuthStateChange((session, user) => {
-          if (mounted) {
-            setSession(session)
-            setUser(user)
-            setLoading(false)
-          }
-        })
-        subscription = data.subscription
-      } catch (error) {
-        console.error('Error setting up auth listener:', error)
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    getInitialSession()
-    setupAuthListener()
+    initAuth()
 
     return () => {
       mounted = false

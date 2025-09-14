@@ -20,6 +20,7 @@ let client: SupabaseClient | null = null;
 
 export async function getSupabaseClient(): Promise<SupabaseClient> {
   if (client) return client;
+  
   const cfg = await getRuntimeConfig();
   
   // Try to get Supabase URL from config.json first, then fall back to env
@@ -29,7 +30,17 @@ export async function getSupabaseClient(): Promise<SupabaseClient> {
   if (!url || !anon) {
     throw new Error('Missing Supabase runtime config: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
   }
-  client = createClient(url, anon);
+  
+  // Create client only once
+  client = createClient(url, anon, {
+    auth: {
+      // Ensure auth persists in localStorage and doesn't conflict
+      storage: localStorage,
+      autoRefreshToken: true,
+      persistSession: true
+    }
+  });
+  
   return client;
 }
 
@@ -183,12 +194,14 @@ export class AuthService {
   /**
    * Listen to auth state changes
    */
-  static async onAuthStateChange(callback: (session: AuthSession | null, user: User | null) => void) {
-    const s = await getSupabaseClient();
-    const { data } = s.auth.onAuthStateChange((event, session) => {
-      callback(session ? session as AuthSession : null, session?.user || null)
+  static onAuthStateChange(callback: (session: AuthSession | null, user: User | null) => void) {
+    // Return a promise that resolves with the subscription data
+    return getSupabaseClient().then(s => {
+      const { data } = s.auth.onAuthStateChange((event, session) => {
+        callback(session ? session as AuthSession : null, session?.user || null)
+      })
+      return { data }
     })
-    return { data }
   }
 }
 
