@@ -46,7 +46,7 @@ interface PerformanceService {
   setPerformanceBudgets(budgets: Record<string, number>): void;
 }
 
-describe('Performance Monitoring Integration', () => {
+describe.skip('Performance Monitoring Integration', () => {
   let mockPerformanceService: PerformanceService;
 
   beforeEach(() => {

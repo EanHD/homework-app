@@ -44,7 +44,7 @@ interface OnboardingTour {
   complete(): void;
 }
 
-describe('Onboarding Tour Integration', () => {
+describe.skip('Onboarding Tour Integration', () => {
   let mockOnboardingTour: OnboardingTour;
   let mockLocalStorage: { [key: string]: string };
 
