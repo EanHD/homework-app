@@ -1,7 +1,16 @@
-import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, Session, User, Provider } from '@supabase/supabase-js';
 import { getRuntimeConfig } from '../config';
+import type { 
+  EnhancedUser, 
+  OAuthProvider, 
+  EnhancedAuthSession,
+  AuthResult,
+  AuthConfig,
+  AuthError
+} from '../models/auth.enhanced';
+import type { AppConfig } from '../models/config.enhanced';
 
-// Types for our auth flow
+// Session types for our service (simplified for Supabase integration)
 export interface AuthSession {
   access_token: string;
   refresh_token: string;
@@ -15,6 +24,18 @@ export interface AuthResponse {
   user: User | null;
   error: string | null;
 }
+
+// OAuth configuration for production
+const OAUTH_CONFIG = {
+  redirectTo: window.location.origin.includes('github.io') 
+    ? `${window.location.origin}/homework-app/`
+    : `${window.location.origin}/`,
+  queryParams: {
+    access_type: 'offline',
+    prompt: 'consent',
+  },
+  scopes: 'openid profile email'
+} as const;
 
 let client: SupabaseClient | null = null;
 
@@ -31,13 +52,29 @@ export async function getSupabaseClient(): Promise<SupabaseClient> {
     throw new Error('Missing Supabase runtime config: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
   }
   
-  // Create client only once
+  // Create client with enhanced OAuth configuration
   client = createClient(url, anon, {
     auth: {
-      // Ensure auth persists in localStorage and doesn't conflict
+      // Enhanced auth configuration for OAuth
       storage: localStorage,
       autoRefreshToken: true,
-      persistSession: true
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce',
+      debug: process.env.NODE_ENV === 'development'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'homework-app@1.0.0'
+      }
+    },
+    db: {
+      schema: 'public'
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
     }
   });
   
@@ -49,23 +86,35 @@ export async function signInWithOtp(email: string) {
   return s.auth.signInWithOtp({ 
     email,
     options: {
-      emailRedirectTo: window.location.origin.includes('github.io') 
-        ? `${window.location.origin}/homework-app/`
-        : `${window.location.origin}/`
+      emailRedirectTo: OAUTH_CONFIG.redirectTo
     }
   });
 }
 
-export async function signInWithOAuth(provider: 'google' | 'apple') {
+export async function signInWithOAuth(provider: OAuthProvider) {
   const s = await getSupabaseClient();
-  return s.auth.signInWithOAuth({ 
-    provider,
+  
+  // Enhanced OAuth configuration per provider
+  let queryParams: Record<string, string> = { 
+    access_type: 'offline',
+    prompt: 'consent'
+  };
+  
+  // Provider-specific configurations
+  if (provider === 'apple') {
+    queryParams.response_mode = 'form_post';
+  }
+  
+  const providerConfig = {
+    provider: provider as Provider,
     options: {
-      redirectTo: window.location.origin.includes('github.io') 
-        ? `${window.location.origin}/homework-app/`
-        : `${window.location.origin}/`
+      redirectTo: OAUTH_CONFIG.redirectTo,
+      scopes: OAUTH_CONFIG.scopes,
+      queryParams
     }
-  });
+  };
+  
+  return s.auth.signInWithOAuth(providerConfig);
 }
 
 export async function getSession() {
@@ -80,7 +129,8 @@ export async function onAuthStateChange(cb: (event: string, session: any) => voi
 }
 
 /**
- * Enhanced Auth helpers for the application
+ * Enhanced Auth Service for v1 production
+ * Integrates with enhanced auth models and provides OAuth support
  */
 export class AuthService {
   /**
@@ -109,9 +159,9 @@ export class AuthService {
   }
 
   /**
-   * Sign in with OAuth provider
+   * Sign in with OAuth provider - Enhanced for v1
    */
-  static async signInWithOAuth(provider: 'google' | 'apple'): Promise<AuthResponse> {
+  static async signInWithOAuth(provider: OAuthProvider): Promise<AuthResponse> {
     try {
       const { data, error } = await signInWithOAuth(provider);
 
@@ -120,6 +170,7 @@ export class AuthService {
       }
 
       // OAuth sign-in redirects, so session will be null initially
+      // The session will be available after redirect callback
       return { session: null, user: null, error: null }
     } catch (error) {
       return { 
@@ -128,6 +179,64 @@ export class AuthService {
         error: error instanceof Error ? error.message : 'Unknown error occurred' 
       }
     }
+  }
+
+  /**
+   * Handle OAuth callback after redirect
+   */
+  static async handleOAuthCallback(): Promise<AuthResponse> {
+    try {
+      const s = await getSupabaseClient();
+      
+      // Get the session from the URL hash or query parameters
+      const { data: { session }, error } = await s.auth.getSession();
+      
+      if (error) {
+        return { session: null, user: null, error: error.message };
+      }
+
+      if (!session) {
+        return { session: null, user: null, error: 'No session found in OAuth callback' };
+      }
+
+      return { 
+        session: session as AuthSession, 
+        user: session.user, 
+        error: null 
+      };
+    } catch (error) {
+      return { 
+        session: null, 
+        user: null, 
+        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      };
+    }
+  }
+
+  /**
+   * Get available OAuth providers
+   */
+  static getAvailableOAuthProviders(): OAuthProvider[] {
+    // In production, this could be configured via environment variables
+    const providers: OAuthProvider[] = [];
+    
+    if (import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+      providers.push('google');
+    }
+    
+    if (import.meta.env.VITE_APPLE_CLIENT_ID) {
+      providers.push('apple');
+    }
+    
+    return providers;
+  }
+
+  /**
+   * Check if OAuth provider is enabled
+   */
+  static isOAuthProviderEnabled(provider: OAuthProvider): boolean {
+    const availableProviders = this.getAvailableOAuthProviders();
+    return availableProviders.includes(provider);
   }
 
   /**

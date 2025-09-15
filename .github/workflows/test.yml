@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main, 001-build-homework-buddy ]
+    branches: [ main, 012-official-v1-release ]
   pull_request:
-    branches: [ main, 001-build-homework-buddy ]
+    branches: [ main, 012-official-v1-release ]
   workflow_dispatch:
 
 concurrency:

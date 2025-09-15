@@ -2,13 +2,14 @@ import { useRef, useState, useEffect } from 'react';
 import { Button, Card, Group, Select, Stack, Switch, Text, Title, SegmentedControl, Divider, Alert, Badge } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
-import { IconAlertCircle, IconDownload, IconUpload, IconTrash, IconPlayerPlay, IconRosetteDiscountCheck } from '@tabler/icons-react';
+import { IconAlertCircle, IconDownload, IconUpload, IconTrash, IconPlayerPlay, IconRosetteDiscountCheck, IconShieldCheck, IconShieldX } from '@tabler/icons-react';
 import { useSettingsStore } from '@/store/settings';
 import { useAppStore } from '@/store/app';
 import { enablePush } from '@/utils/push';
 import { getOrCreateUserId } from '@/utils/userId';
 import { deleteSubscription, scheduleReminder } from '@/services/pushApi';
 import { postSendNotifications } from '@/services/pushApi';
+import ProductionValidator from '@/services/productionValidator';
 import pkg from '../../package.json';
 import { saveState } from '@/store/persistence';
 import { getRuntimeConfig } from '@/config';
@@ -250,7 +251,6 @@ export default function SettingsPage() {
                   if (!res || !res.ok) {
                     notifications.show({ message: 'Failed to schedule test', color: 'red' });
                   } else {
-                    try { console.log('[settings] scheduled test notification for ~60s'); } catch {}
                     notifications.show({ message: 'Test notification scheduled for 60s', color: 'blue' });
                   }
                 } catch {
@@ -267,7 +267,6 @@ export default function SettingsPage() {
                   const res = await postSendNotifications();
                   if (res && res.ok) {
                     const json = await res.json();
-                    console.log('[settings] send-notifications report', json);
                     const summary = `processed=${json.processed} successes=${json.successes} errors=${json.errors} vapidLen=${json.vapidPublicLen}${json.vapidPublicHash ? ` hash=${json.vapidPublicHash}` : ''}`;
                     setLastDeliverStatus(summary);
                     notifications.show({ message: `Deliverer OK: ${summary}`, color: 'green' });
@@ -426,6 +425,41 @@ export default function SettingsPage() {
           </Button>
           <Button leftSection={<IconRosetteDiscountCheck size={16} />} onClick={onAddSample} aria-label="Add sample data">
             Add sample data
+          </Button>
+        </Group>
+      </Card>
+
+      {/* Production Validation */}
+      <Card withBorder radius="md" p="md">
+        <SectionTitle>Production Health</SectionTitle>
+        <Group gap="md" wrap="wrap">
+          <Button 
+            leftSection={<IconShieldCheck size={16} />} 
+            variant="default" 
+            onClick={async () => {
+              try {
+                const result = await ProductionValidator.validate();
+                const passCount = result.checks.filter(c => c.status === 'pass').length;
+                const warnCount = result.checks.filter(c => c.status === 'warn').length;
+                const failCount = result.checks.filter(c => c.status === 'fail').length;
+                
+                const summary = `${passCount} pass, ${warnCount} warn, ${failCount} fail`;
+                const color = result.overall === 'healthy' ? 'green' : result.overall === 'degraded' ? 'yellow' : 'red';
+                
+                notifications.show({ 
+                  message: `Environment ${result.overall}: ${summary}`, 
+                  color 
+                });
+              } catch (error) {
+                notifications.show({ 
+                  message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+                  color: 'red' 
+                });
+              }
+            }}
+            aria-label="Run production health check"
+          >
+            Run Health Check
           </Button>
         </Group>
       </Card>

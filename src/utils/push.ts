@@ -36,12 +36,6 @@ export async function enablePush(userId: string): Promise<EnablePushResult> {
     const cfg = await getRuntimeConfig();
     const publicKey = cfg.vapidPublic as string | undefined;
     const functionsBase = cfg.functionsBase;
-    try {
-      console.log('[enablePush] runtime config', {
-        functionsBase,
-        vapidPublicLen: publicKey ? publicKey.length : 0,
-      });
-    } catch {}
     if (!publicKey) throw new Error('Missing VAPID public key configuration');
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -55,24 +49,12 @@ export async function enablePush(userId: string): Promise<EnablePushResult> {
   const json = getSubscriptionJSON(sub);
   if (!json?.endpoint || !json.keys?.p256dh || !json.keys?.auth) throw new Error('Invalid subscription');
 
-  // Log outbound request target for debugging
-  try {
-    const cfg = await getRuntimeConfig();
-    console.log('[enablePush] POST to', `${cfg.functionsBase}/subscribe`);
-  } catch {}
-
   // Always invoke subscribe call (tests assert it's called). In test env, ignore result.
   const res = await postSubscribe({ userId, endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } });
   if (isTest) {
-    try { console.log('[enablePush:test] invoked postSubscribe, ignoring response'); } catch {}
     return { reused, endpoint: json.endpoint };
   }
-  try {
-    const text = await res?.clone()?.text();
-    console.log('[enablePush] subscribe response', { status: res?.status, ok: res?.ok, body: text });
-  } catch {}
   if (!res || !res.ok) throw new Error('Subscribe failed');
 
-  try { console.log(`[enablePush] ${reused ? 'reused' : 'created'} subscription for ${userId}`); } catch {}
   return { reused, endpoint: json.endpoint };
 }

@@ -7,19 +7,18 @@ import {
   TextInput, 
   Button, 
   Stack, 
-  Group, 
   Alert, 
   Divider,
-  Center
 } from '@mantine/core'
-import { IconMail, IconBrandGoogle, IconBrandApple, IconCheck, IconX } from '@tabler/icons-react'
+import { IconMail, IconCheck, IconX } from '@tabler/icons-react'
 import { useAuth } from '../hooks/useAuth'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
 
 export function Login() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const { signInWithMagicLink, signInWithOAuth } = useAuth()
+  const { signInMagicLink } = useAuth()
 
   const handleMagicLinkSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,7 +39,7 @@ export function Login() {
     setMessage(null)
 
     try {
-      const { error } = await signInWithMagicLink(email)
+  const { error } = await signInMagicLink(email)
       
       if (error) {
         setMessage({ type: 'error', text: error })
@@ -61,26 +60,7 @@ export function Login() {
     }
   }
 
-  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
-    setLoading(true)
-    setMessage(null)
-
-    try {
-      const { error } = await signInWithOAuth(provider)
-      
-      if (error) {
-        setMessage({ type: 'error', text: error })
-        setLoading(false)
-      }
-      // Note: For OAuth, the user will be redirected, so we don't set loading to false here
-    } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: 'An unexpected error occurred. Please try again.' 
-      })
-      setLoading(false)
-    }
-  }
+  // OAuth handled by OAuthButtons component (shared logic via auth store)
 
   return (
     <Container size="xs" py="xl">
@@ -129,29 +109,12 @@ export function Login() {
 
         <Divider label="Or continue with" labelPosition="center" my="lg" />
 
-        <Stack>
-          <Button
-            variant="outline"
-            fullWidth
-            leftSection={<IconBrandGoogle size="1rem" />}
-            onClick={() => handleOAuthSignIn('google')}
-            disabled={loading}
-            loading={loading}
-          >
-            Continue with Google
-          </Button>
-
-          <Button
-            variant="outline"
-            fullWidth
-            leftSection={<IconBrandApple size="1rem" />}
-            onClick={() => handleOAuthSignIn('apple')}
-            disabled={loading}
-            loading={loading}
-          >
-            Continue with Apple
-          </Button>
-        </Stack>
+        <OAuthButtons
+          onStarted={() => setLoading(true)}
+          onError={(_, e) => { setMessage({ type: 'error', text: e }); setLoading(false); }}
+          onRedirect={() => {/* redirect handled by provider */}}
+          showErrors={false}
+        />
 
         <Text c="dimmed" size="xs" ta="center" mt="xl">
           By signing in, you agree to our Terms of Service and Privacy Policy.

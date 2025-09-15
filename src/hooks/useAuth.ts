@@ -1,103 +1,154 @@
-import { useState, useEffect } from 'react'
-import { User } from '@supabase/supabase-js'
-import { AuthService, AuthSession } from '../services/supabase'
+import { useEffect, useCallback } from 'react';
+import { 
+  useAuthStore,
+  useIsAuthenticated,
+  useAuthUser,
+  useAuthLoading,
+  useAuthError,
+  useAuthProviders,
+  type OAuthProvider 
+} from '../store/auth';
 
+/**
+ * Enhanced authentication hook with OAuth support
+ * Provides lazy initialization and convenient action wrappers
+ * Replaces previous useState-based implementation with Zustand store
+ */
 export interface UseAuthReturn {
-  user: User | null
-  session: AuthSession | null
-  loading: boolean
-  signInWithMagicLink: (email: string) => Promise<{ error: string | null }>
-  signInWithOAuth: (provider: 'google' | 'apple') => Promise<{ error: string | null }>
-  signOut: () => Promise<{ error: string | null }>
+  // State
+  user: any | null;
+  session: any | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  isInitialized: boolean;
+  error: string | null;
+  providers: OAuthProvider[];
+  lastActivityAt: string | null;
+
+  // Actions
+  signInMagicLink: (email: string) => Promise<{ success: boolean; error?: string }>;
+  signInWithProvider: (provider: OAuthProvider) => Promise<{ success: boolean; error?: string; redirectTo?: string }>;
+  handleOAuthCallback: () => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+  refresh: () => Promise<void>;
+
+  // Convenience helpers
+  hasGoogle: boolean;
+  hasApple: boolean;
+  hasAnyProvider: boolean;
+  isProviderEnabled: (provider: OAuthProvider) => boolean;
+  getProviders: () => OAuthProvider[];
+
+  // Legacy compatibility
+  loading: boolean; // alias for isLoading
+  signInWithOAuth: (provider: 'google' | 'apple') => Promise<{ error: string | null }>; // legacy compat
 }
 
 export function useAuth(): UseAuthReturn {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<AuthSession | null>(null)
-  const [loading, setLoading] = useState(true)
+  const store = useAuthStore();
+  const user = useAuthUser();
+  const isAuthenticated = useIsAuthenticated();
+  const isLoading = useAuthLoading();
+  const error = useAuthError();
+  const providers = useAuthProviders();
 
+  // Lazy initialization - initialize auth on first use if not already done
   useEffect(() => {
-    let mounted = true;
-    let subscription: any = null;
+    if (!store.isInitialized) {
+      store.initialize();
+    }
+  }, [store.isInitialized, store.initialize]);
 
-    const initAuth = async () => {
-      try {
-        // Get initial session
-        const { session, user, error } = await AuthService.getSession()
-        
-        if (!mounted) return;
+  // Network online recovery: attempt refresh when connection is restored
+  useEffect(() => {
+    const onOnline = () => {
+      // Only refresh if we believe we're authenticated but might have stale session
+      if (store.isInitialized && store.isAuthenticated) {
+        store.refresh();
+      } else if (store.isInitialized && !store.isAuthenticated) {
+        // Try a lightweight initialize again in case storage had a session
+        store.refresh();
+      }
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [store.isInitialized, store.isAuthenticated, store.refresh]);
 
-        if (!error) {
-          setSession(session)
-          setUser(user)
-        }
-
-        // Set up auth listener
-        const { data } = await AuthService.onAuthStateChange((newSession, newUser) => {
-          if (mounted) {
-            setSession(newSession)
-            setUser(newUser)
-          }
-        })
-        subscription = data.subscription
-
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-      } finally {
-        if (mounted) {
-          setLoading(false)
+  // Page visibility: when returning to tab after >10m, refresh session
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const last = store.lastActivityAt ? new Date(store.lastActivityAt).getTime() : 0;
+        if (Date.now() - last > 10 * 60 * 1000) {
+          store.refresh();
         }
       }
-    }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [store.lastActivityAt, store.refresh]);
 
-    initAuth()
+  // Wrapped actions with consistent return types
+  const signInMagicLink = useCallback(async (email: string) => {
+    return await store.signInMagicLink(email);
+  }, [store.signInMagicLink]);
 
-    return () => {
-      mounted = false
-      subscription?.unsubscribe()
-    }
-  }, []) // Empty dependency array
+  const signInWithProvider = useCallback(async (provider: OAuthProvider) => {
+    return await store.signInWithProvider(provider);
+  }, [store.signInWithProvider]);
 
-  const signInWithMagicLink = async (email: string) => {
-    setLoading(true)
-    try {
-      const { error } = await AuthService.signInWithMagicLink(email)
-      return { error }
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleOAuthCallback = useCallback(async () => {
+    return await store.handleOAuthCallback();
+  }, [store.handleOAuthCallback]);
 
-  const signInWithOAuth = async (provider: 'google' | 'apple') => {
-    setLoading(true)
-    try {
-      const { error } = await AuthService.signInWithOAuth(provider)
-      return { error }
-    } finally {
-      setLoading(false)
-    }
-  }
+  const signOut = useCallback(async () => {
+    await store.signOut();
+  }, [store.signOut]);
 
-  const signOut = async () => {
-    setLoading(true)
-    try {
-      const { error } = await AuthService.signOut()
-      if (!error) {
-        setSession(null)
-        setUser(null)
-      }
-      return { error }
-    } finally {
-      setLoading(false)
-    }
-  }
+  const refresh = useCallback(async () => {
+    await store.refresh();
+  }, [store.refresh]);
+
+  // Legacy compatibility wrapper
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'apple') => {
+    const result = await signInWithProvider(provider as OAuthProvider);
+    return { error: result.success ? null : (result.error || 'OAuth sign-in failed') };
+  }, [signInWithProvider]);
+
+  // Convenience helpers
+  const hasGoogle = providers.includes('google');
+  const hasApple = providers.includes('apple');
+  const hasAnyProvider = providers.length > 0;
+  const isProviderEnabled = store.isProviderEnabled;
+  const getProviders = store.getProviders;
 
   return {
+    // State
     user,
-    session,
-    loading,
-    signInWithMagicLink,
+    session: store.session,
+    isAuthenticated,
+    isLoading,
+    isInitialized: store.isInitialized,
+    error,
+    providers,
+    lastActivityAt: store.lastActivityAt,
+
+    // Actions
+    signInMagicLink,
+    signInWithProvider,
+    handleOAuthCallback,
+    signOut,
+    refresh,
+
+    // Provider helpers
+    hasGoogle,
+    hasApple,
+    hasAnyProvider,
+    isProviderEnabled,
+    getProviders,
+
+    // Legacy compatibility
+    loading: isLoading,
     signInWithOAuth,
-    signOut
-  }
+  };
 }

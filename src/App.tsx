@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import usePerformanceTargetsValidation from '@/hooks/usePerformanceTargetsValidation';
 import AppShell from '@/ui/AppShell';
-import TodayPage from '@/pages/Today';
-import UpcomingPage from '@/pages/Upcoming';
-import ClassesPage from '@/pages/Classes';
-import SettingsPage from '@/pages/Settings';
-import LoginPage from '@/pages/Login';
+// Route-based code splitting for primary pages
+const TodayPage = lazy(() => import('@/pages/Today'));
+const UpcomingPage = lazy(() => import('@/pages/Upcoming'));
+const ClassesPage = lazy(() => import('@/pages/Classes'));
+const SettingsPage = lazy(() => import('@/pages/Settings'));
+const LoginPage = lazy(() => import('@/pages/Login'));
 import { createStore } from '@/store/store';
 import type { NavKey } from '@/ui/AppShell';
 import type { State } from '@/store/types';
@@ -12,11 +14,14 @@ import AssignmentForm from '@/ui/AssignmentForm';
 import { useAppStore } from '@/store/app';
 import { useAuth } from '@/hooks/useAuth';
 import { Button, Center, Loader, Stack, Text } from '@mantine/core';
+import { SkeletonText, SkeletonCardLayout } from '@/components/ui/SkeletonLoader';
 import OnboardingHints from '@/ui/OnboardingHints';
 import IosInstallHint from '@/ui/IosInstallHint';
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
+  // Kick off performance targets validation (initial load auto-check)
+  const { results: perfTargets } = usePerformanceTargetsValidation(true);
   const store = useMemo(() => createStore(), []);
   const [state, setState] = useState<State>(store.getState());
   const [active, setActive] = useState<NavKey>('today');
@@ -35,14 +40,11 @@ export default function App() {
   // Hydrate app store for new pages - only when user is logged in
   useEffect(() => {
     if (user) {
-      console.log('App: loadAll effect running')
       void useAppStore.getState().loadAll();
     }
   }, [user]); // Run when user changes
 
   // If onboarding is pending (replay or first run) and we're not on Today, snap to Today
-  // TEMPORARILY DISABLED for debugging
-  /*
   useEffect(() => {
     if (!seenOnboarding && active !== 'today') {
       setActive('today');
@@ -52,11 +54,8 @@ export default function App() {
       }, 0);
     }
   }, [seenOnboarding, active]);
-  */
 
   // Keyboard shortcuts: 'a' or '/' open add, Esc close, Enter submit when form open
-  // TEMPORARILY DISABLED for debugging
-  /*
   useEffect(() => {
     const isTypingTarget = (el: EventTarget | null) => {
       if (!(el instanceof HTMLElement)) return false;
@@ -92,7 +91,6 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [formOpen]);
-  */
 
   // Show loading screen while checking authentication
   if (authLoading) {
@@ -108,7 +106,20 @@ export default function App() {
 
   // Show login page if user is not authenticated
   if (!user) {
-    return <LoginPage />;
+    return (
+      <Suspense
+        fallback={
+          <Center style={{ height: '100vh' }}>
+            <Stack align="center" gap="md">
+              <Loader size="lg" />
+              <Text c="dimmed">Loading login...</Text>
+            </Stack>
+          </Center>
+        }
+      >
+        <LoginPage />
+      </Suspense>
+    );
   }
 
   const renderPage = () => {
@@ -155,7 +166,20 @@ export default function App() {
       >
         <div id="main" role="main">
           <IosInstallHint />
-          {renderPage()}
+          <Suspense
+            fallback={
+              <Stack gap="lg" p="md">
+                <SkeletonText lines={3} />
+                <Stack gap="md">
+                  <SkeletonCardLayout />
+                  <SkeletonCardLayout />
+                  <SkeletonCardLayout />
+                </Stack>
+              </Stack>
+            }
+          >
+            {renderPage()}
+          </Suspense>
         </div>
       </AppShell>
 

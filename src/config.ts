@@ -35,12 +35,6 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
       };
       if (fromEnv.functionsBase || fromEnv.vapidPublic) {
         cached = fromEnv;
-        try {
-          console.log('[config] using Vite env (dev/test)', {
-            hasFunctionsBase: !!fromEnv.functionsBase,
-            vapidPublicLen: (fromEnv.vapidPublic || '').length,
-          });
-        } catch {}
         return cached;
       }
     }
