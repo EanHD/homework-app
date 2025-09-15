@@ -39,6 +39,9 @@ const OAUTH_CONFIG = {
 
 let client: SupabaseClient | null = null;
 
+// Internal guard to avoid duplicate magic link consumption
+let magicLinkConsumed = false;
+
 export async function getSupabaseClient(): Promise<SupabaseClient> {
   if (client) return client;
   
@@ -79,6 +82,55 @@ export async function getSupabaseClient(): Promise<SupabaseClient> {
   });
   
   return client;
+}
+
+/**
+ * Detect and verify Supabase magic link style URLs that contain token_hash & type params.
+ * Supabase JS client only auto-detects fragment URLs with access_token when detectSessionInUrl is true.
+ * When using custom email templates (ConfirmationURL) the link often comes as
+ *   https://app.example.com/?token_hash=...&type=magiclink&email=you%40mail.com
+ * or sometimes inside the hash portion. We manually verify and then clean the URL.
+ * Returns true if a verification attempt was made (success or failure), false otherwise.
+ */
+export async function consumeMagicLinkIfPresent(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if (magicLinkConsumed) return false;
+  try {
+    const loc = window.location;
+    const searchParams = new URLSearchParams(loc.search);
+    // Some providers may place params after '#'
+    if ((!searchParams.get('token_hash') || !searchParams.get('type')) && loc.hash.includes('token_hash')) {
+      const hashPart = loc.hash.startsWith('#') ? loc.hash.slice(1) : loc.hash;
+      // If hash contains '?' use portion after '?', else treat whole hash as query string
+      const qs = hashPart.includes('?') ? hashPart.split('?')[1] : hashPart;
+      const hashParams = new URLSearchParams(qs);
+      // Merge missing values from hash
+      if (!searchParams.get('token_hash') && hashParams.get('token_hash')) searchParams.set('token_hash', hashParams.get('token_hash')!);
+      if (!searchParams.get('type') && hashParams.get('type')) searchParams.set('type', hashParams.get('type')!);
+      if (!searchParams.get('email') && hashParams.get('email')) searchParams.set('email', hashParams.get('email')!);
+    }
+    const tokenHash = searchParams.get('token_hash');
+    const type = searchParams.get('type') as any; // magiclink | signup | recovery | invite
+    const email = searchParams.get('email');
+    if (!tokenHash || !type || !email) return false;
+    magicLinkConsumed = true;
+    const s = await getSupabaseClient();
+    // verifyOtp expects a type union; we cast conservatively
+    await s.auth.verifyOtp({ type, token_hash: tokenHash, email });
+    // Clean URL (remove sensitive params) preserving path/base
+    try {
+      const cleanUrl = OAUTH_CONFIG.redirectTo;
+      window.history.replaceState({}, document.title, cleanUrl);
+    } catch {}
+    return true;
+  } catch (e) {
+    // Do not block app if verification fails; just log in dev
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn('[auth] magic link verification failed', e);
+    }
+    return false;
+  }
 }
 
 export async function signInWithOtp(email: string) {

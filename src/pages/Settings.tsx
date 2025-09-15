@@ -172,9 +172,6 @@ export default function SettingsPage() {
       <Card withBorder radius="md" p="md">
         <SectionTitle>Notifications</SectionTitle>
         <Stack>
-          <Text size="xs" c="dimmed">
-            Diagnostics: functionsBase={<code>{diagCfg.fb || '(missing)'}</code>} · vapidPublic len={diagCfg.vplen || 0}
-          </Text>
           <Switch
             checked={notificationsEnabled}
             onChange={(e) => setNotificationsEnabled(e.currentTarget.checked)}
@@ -330,39 +327,40 @@ export default function SettingsPage() {
         </Stack>
       </Card>
 
-      {/* Diagnostics */}
-      <Card withBorder radius="md" p="md">
-        <SectionTitle>Diagnostics</SectionTitle>
-        <Stack gap="xs">
-          <Text size="sm">Functions base: <code>{diagCfg.fb || '(missing)'}</code></Text>
-          <Text size="sm">VAPID public length: {diagCfg.vplen || 0}</Text>
-          <Text size="sm">Subscription endpoint: <code>{subEndpoint ? `${subEndpoint.slice(0, 48)}...` : '(none)'}</code></Text>
-          {lastScheduleStatus && (
-            <Text size="sm">Last schedule: {lastScheduleStatus}</Text>
-          )}
-          {lastDeliverStatus && (
-            <Text size="sm">Last deliver: {lastDeliverStatus}</Text>
-          )}
-          <Group gap="sm" mt="xs">
-            <Button
-              size="xs"
-              variant="default"
-              onClick={() => {
-                try {
-                  localStorage.removeItem('hb_vapid_public');
-                  localStorage.removeItem('hb_functions_base');
-                  notifications.show({ message: 'Config overrides cleared. Reloading...', color: 'blue' });
-                  setTimeout(() => location.reload(), 500);
-                } catch {
-                  notifications.show({ message: 'Failed to clear overrides', color: 'red' });
-                }
-              }}
-            >
-              Reset config overrides
-            </Button>
-          </Group>
-        </Stack>
-      </Card>
+      {import.meta.env.DEV && (
+        <Card withBorder radius="md" p="md">
+          <SectionTitle>Diagnostics</SectionTitle>
+          <Stack gap="xs">
+            <Text size="sm">Functions base: <code>{diagCfg.fb || '(missing)'}</code></Text>
+            <Text size="sm">VAPID public length: {diagCfg.vplen || 0}</Text>
+            <Text size="sm">Subscription endpoint: <code>{subEndpoint ? `${subEndpoint.slice(0, 48)}...` : '(none)'}</code></Text>
+            {lastScheduleStatus && (
+              <Text size="sm">Last schedule: {lastScheduleStatus}</Text>
+            )}
+            {lastDeliverStatus && (
+              <Text size="sm">Last deliver: {lastDeliverStatus}</Text>
+            )}
+            <Group gap="sm" mt="xs">
+              <Button
+                size="xs"
+                variant="default"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('hb_vapid_public');
+                    localStorage.removeItem('hb_functions_base');
+                    notifications.show({ message: 'Config overrides cleared. Reloading...', color: 'blue' });
+                    setTimeout(() => location.reload(), 500);
+                  } catch {
+                    notifications.show({ message: 'Failed to clear overrides', color: 'red' });
+                  }
+                }}
+              >
+                Reset config overrides
+              </Button>
+            </Group>
+          </Stack>
+        </Card>
+      )}
 
       {/* Appearance */}
       <Card withBorder radius="md" p="md">
@@ -429,40 +427,33 @@ export default function SettingsPage() {
         </Group>
       </Card>
 
-      {/* Production Validation */}
-      <Card withBorder radius="md" p="md">
-        <SectionTitle>Production Health</SectionTitle>
-        <Group gap="md" wrap="wrap">
-          <Button 
-            leftSection={<IconShieldCheck size={16} />} 
-            variant="default" 
-            onClick={async () => {
-              try {
-                const result = await ProductionValidator.validate();
-                const passCount = result.checks.filter(c => c.status === 'pass').length;
-                const warnCount = result.checks.filter(c => c.status === 'warn').length;
-                const failCount = result.checks.filter(c => c.status === 'fail').length;
-                
-                const summary = `${passCount} pass, ${warnCount} warn, ${failCount} fail`;
-                const color = result.overall === 'healthy' ? 'green' : result.overall === 'degraded' ? 'yellow' : 'red';
-                
-                notifications.show({ 
-                  message: `Environment ${result.overall}: ${summary}`, 
-                  color 
-                });
-              } catch (error) {
-                notifications.show({ 
-                  message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
-                  color: 'red' 
-                });
-              }
-            }}
-            aria-label="Run production health check"
-          >
-            Run Health Check
-          </Button>
-        </Group>
-      </Card>
+      {import.meta.env.DEV && (
+        <Card withBorder radius="md" p="md">
+          <SectionTitle>Production Health</SectionTitle>
+          <Group gap="md" wrap="wrap">
+            <Button 
+              leftSection={<IconShieldCheck size={16} />} 
+              variant="default" 
+              onClick={async () => {
+                try {
+                  const result = await ProductionValidator.validate();
+                  const passCount = result.checks.filter(c => c.status === 'pass').length;
+                  const warnCount = result.checks.filter(c => c.status === 'warn').length;
+                  const failCount = result.checks.filter(c => c.status === 'fail').length;
+                  const summary = `${passCount} pass, ${warnCount} warn, ${failCount} fail`;
+                  const color = result.overall === 'healthy' ? 'green' : result.overall === 'degraded' ? 'yellow' : 'red';
+                  notifications.show({ message: `Environment ${result.overall}: ${summary}`, color });
+                } catch (error) {
+                  notifications.show({ message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`, color: 'red' });
+                }
+              }}
+              aria-label="Run production health check"
+            >
+              Run Health Check
+            </Button>
+          </Group>
+        </Card>
+      )}
 
       {/* About */}
       <Card withBorder radius="md" p="md">

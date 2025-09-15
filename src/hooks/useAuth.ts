@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { consumeMagicLinkIfPresent } from '@/services/supabase';
 import { 
   useAuthStore,
   useIsAuthenticated,
@@ -54,6 +55,9 @@ export function useAuth(): UseAuthReturn {
 
   // Lazy initialization - initialize auth on first use if not already done
   useEffect(() => {
+    // Attempt to consume magic link parameters ASAP (before initialize sets state)
+    // This helps mobile Safari which may reload without fragment tokens.
+    consumeMagicLinkIfPresent().catch(() => {});
     if (!store.isInitialized) {
       store.initialize();
     }
